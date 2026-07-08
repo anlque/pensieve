@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#02080d" />
+    <title>Омут памяти</title>
+    <script type="module" crossorigin src="/assets/index-ofLpFGi5.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BtPHEU5c.css">
+  </head>
+  <body>
+    <main id="app" class="app-shell">
+      <section class="app-stage" aria-labelledby="app-title">
+        <button class="icon-button info-button" type="button" aria-label="Информация">
+          i
+        </button>
+
+        <button class="icon-button tune-button" type="button" aria-label="Настройки">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <div class="forest-depth" aria-hidden="true"></div>
+        <div class="star-field" aria-hidden="true"></div>
+
+        <div class="screen screen-home" data-screen="home">
+          <header class="hero-copy">
+            <h1 id="app-title">Омут<br />памяти</h1>
+            <p>Твои мысли важны.<br />Выгрузи их. Отпусти.</p>
+          </header>
+        </div>
+
+        <div class="screen screen-capture" data-screen="capture" aria-hidden="true">
+          <button class="back-button" type="button" aria-label="Назад">
+            ‹
+          </button>
+
+          <form class="thought-form" autocomplete="off">
+            <label class="sr-only" for="thought-input">Мысль</label>
+            <input
+              id="thought-input"
+              class="thought-input"
+              name="thought"
+              type="text"
+              placeholder="Вытащи мысль..."
+              maxlength="80"
+            />
+            <button class="thought-submit" type="submit" aria-label="Поймать мысль">
+              <span></span>
+            </button>
+          </form>
+
+          <div class="wand-hand" aria-hidden="true">
+            <div class="hand">
+              <span class="finger finger-one"></span>
+              <span class="finger finger-two"></span>
+              <span class="thumb"></span>
+              <span class="palm"></span>
+            </div>
+            <div class="long-wand">
+              <span class="wand-light"></span>
+            </div>
+          </div>
+
+          <div class="thought-cloud" aria-live="polite">
+            <span class="thought-cloud-text">Нужно позвонить маме</span>
+          </div>
+          <div class="thought-stream" aria-hidden="true"></div>
+          <div class="release-trail" aria-hidden="true"></div>
+        </div>
+
+        <div class="pensieve-scene" aria-hidden="true">
+          <div class="bowl-rim"></div>
+          <div class="water-surface">
+            <span class="ripple ripple-one"></span>
+            <span class="ripple ripple-two"></span>
+            <span class="ripple ripple-three"></span>
+            <span class="glow-dot dot-one"></span>
+            <span class="glow-dot dot-two"></span>
+            <span class="glow-dot dot-three"></span>
+            <span class="glow-dot dot-four"></span>
+            <span class="release-splash"></span>
+          </div>
+          <div class="bowl-front"></div>
+        </div>
+
+        <div class="primary-action">
+          <button class="wand-button" type="button" aria-label="Взять мысль палочкой">
+            <span class="wand-icon"></span>
+          </button>
+          <p>Коснись и начни<br />выгружать мысли</p>
+        </div>
+
+      </section>
+    </main>
+  </body>
+</html>
