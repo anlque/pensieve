@@ -161,15 +161,33 @@ button {
 .screen-capture {
   opacity: 0;
   transform: translateY(16px);
+  visibility: hidden;
   transition:
     opacity 520ms ease 140ms,
-    transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1) 120ms;
+    transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1) 120ms,
+    visibility 0ms linear 720ms;
+}
+
+.screen-capture[aria-hidden="true"] {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: none;
 }
 
 .is-capturing .screen-capture {
   opacity: 1;
   transform: translateY(0);
-  pointer-events: auto;
+  visibility: visible;
+  pointer-events: none;
+  transition:
+    opacity 520ms ease 140ms,
+    transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1) 120ms,
+    visibility 0ms linear 0ms;
+}
+
+.app-stage:not(.is-capturing) .pensieve-thoughts {
+  opacity: 0 !important;
+  transition: none;
 }
 
 .hero-copy {
@@ -209,6 +227,8 @@ button {
   bottom: clamp(142px, 22vh, 188px);
   width: min(var(--scene-max), 86vw);
   aspect-ratio: 2.3 / 1;
+  --stir-x: 50%;
+  --stir-y: 50%;
   transform: translateX(-50%);
   z-index: 1;
   transition:
@@ -250,12 +270,112 @@ button {
     inset 0 2px 18px rgba(183, 233, 255, 0.16),
     inset 0 -10px 24px rgba(0, 0, 0, 0.82),
     0 0 34px rgba(93, 191, 255, 0.18);
+  transition:
+    box-shadow 420ms ease,
+    filter 420ms ease;
+}
+
+.is-stirring .water-surface {
+  filter: brightness(1.14) saturate(1.22);
+  box-shadow:
+    inset 0 2px 24px rgba(199, 241, 255, 0.24),
+    inset 0 -10px 28px rgba(0, 0, 0, 0.76),
+    0 0 46px rgba(93, 191, 255, 0.26);
+}
+
+.pensieve-thoughts {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.is-capturing .pensieve-thoughts {
+  opacity: 1;
+  transition: opacity 520ms ease;
+}
+
+.pensieve-thought {
+  position: absolute;
+  left: var(--thought-x);
+  top: var(--thought-y);
+  display: grid;
+  place-items: center;
+  width: clamp(70px, 16%, 104px);
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid rgba(174, 226, 255, 0.2);
+  border-radius: 48% 52% 44% 56% / 55% 44% 56% 45%;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(229, 248, 255, 0.26), transparent 22%),
+    radial-gradient(circle at 50% 52%, rgba(91, 161, 214, 0.28), rgba(25, 66, 99, 0.18) 62%, rgba(7, 24, 38, 0.1));
+  box-shadow:
+    inset 0 0 16px rgba(201, 235, 255, 0.12),
+    0 0 18px rgba(94, 191, 255, 0.14);
+  color: rgba(236, 246, 255, calc(0.42 + var(--thought-depth) * 0.3));
+  font-size: clamp(9px, 1.2vw, 12px);
+  line-height: 1.16;
+  text-align: center;
+  overflow-wrap: anywhere;
+  opacity: calc(0.18 + var(--thought-depth) * 0.48);
+  filter: blur(calc((1 - var(--thought-depth)) * 1.8px));
+  transform:
+    translate3d(-50%, -50%, 0)
+    scale(calc(var(--thought-scale) * (0.76 + var(--thought-depth) * 0.28)));
+  animation:
+    thoughtDrift var(--thought-duration) ease-in-out var(--thought-delay) infinite,
+    thoughtSurface calc(var(--thought-duration) * 1.45) ease-in-out var(--thought-delay) infinite;
+  transition:
+    opacity 360ms ease,
+    filter 360ms ease;
+}
+
+.is-stirring .pensieve-thought {
+  animation:
+    thoughtDrift calc(var(--thought-duration) * 0.48) ease-in-out var(--thought-delay) infinite,
+    thoughtSurface calc(var(--thought-duration) * 0.76) ease-in-out var(--thought-delay) infinite,
+    thoughtScatter 980ms cubic-bezier(0.2, 0.7, 0.2, 1) infinite alternate;
+  opacity: calc(0.24 + var(--thought-depth) * 0.56);
+  filter: blur(calc((1 - var(--thought-depth)) * 1.1px)) brightness(1.2);
+}
+
+.pensieve-thought::before,
+.pensieve-thought::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(112, 190, 235, 0.16);
+  box-shadow: inset 0 0 8px rgba(213, 241, 255, 0.12);
+}
+
+.pensieve-thought::before {
+  left: -8px;
+  bottom: 10px;
+  width: 18px;
+  height: 18px;
+}
+
+.pensieve-thought::after {
+  right: -6px;
+  top: 10px;
+  width: 20px;
+  height: 20px;
+}
+
+.has-many-thoughts .pensieve-thought:nth-child(2n) {
+  animation-delay: calc(var(--thought-delay) - 2.8s), calc(var(--thought-delay) - 1.6s);
+}
+
+.has-many-thoughts .pensieve-thought:nth-child(3n) {
+  opacity: calc(0.16 + var(--thought-depth) * 0.38);
 }
 
 .water-surface::before {
   content: "";
   position: absolute;
   inset: -30%;
+  z-index: 1;
   background:
     conic-gradient(
       from 40deg,
@@ -268,16 +388,65 @@ button {
   animation: slowSwirl 18s linear infinite;
 }
 
+.is-stirring .water-surface::before {
+  animation-duration: 4.8s;
+  background:
+    radial-gradient(
+      circle at var(--stir-x) var(--stir-y),
+      rgba(200, 246, 255, 0.26),
+      rgba(111, 207, 255, 0.12) 18%,
+      transparent 32%
+    ),
+    conic-gradient(
+      from 40deg,
+      transparent,
+      rgba(167, 230, 255, 0.2),
+      transparent,
+      rgba(95, 172, 226, 0.18),
+      transparent
+    );
+}
+
 .water-surface::after {
   content: "";
   position: absolute;
   inset: 18% 23%;
+  z-index: 3;
   border-radius: 50%;
   background:
     radial-gradient(circle, rgba(203, 246, 255, 0.42) 0 3px, transparent 5px),
     radial-gradient(ellipse, rgba(121, 217, 255, 0.24), transparent 48%);
   opacity: 0;
   transform: scale(0.34);
+}
+
+.stir-glow {
+  position: absolute;
+  left: var(--stir-x);
+  top: var(--stir-y);
+  z-index: 6;
+  width: 58px;
+  height: 58px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(220, 252, 255, 0.72) 0 6px, rgba(118, 217, 255, 0.24) 16px, transparent 34px);
+  box-shadow:
+    0 0 22px rgba(118, 217, 255, 0.48),
+    0 0 46px rgba(42, 146, 224, 0.24);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.62);
+  transition:
+    left 80ms linear,
+    top 80ms linear,
+    opacity 220ms ease,
+    transform 420ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  pointer-events: none;
+}
+
+.is-stirring .stir-glow {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  animation: stirPulse 880ms ease-in-out infinite alternate;
 }
 
 .is-releasing .water-surface::before {
@@ -290,6 +459,7 @@ button {
 
 .ripple {
   position: absolute;
+  z-index: 4;
   inset: 28%;
   border: 1px solid rgba(139, 218, 255, 0.18);
   border-radius: 50%;
@@ -309,6 +479,7 @@ button {
 
 .glow-dot {
   position: absolute;
+  z-index: 5;
   width: 6px;
   height: 6px;
   border-radius: 999px;
@@ -319,6 +490,7 @@ button {
 
 .release-splash {
   position: absolute;
+  z-index: 6;
   left: 50%;
   top: 48%;
   width: 16px;
@@ -370,6 +542,20 @@ button {
     linear-gradient(180deg, rgba(24, 49, 65, 0.24), rgba(0, 0, 0, 0.88)),
     radial-gradient(ellipse at 50% 0%, rgba(126, 191, 230, 0.18), transparent 44%);
   clip-path: ellipse(50% 45% at 50% 0%);
+  pointer-events: none;
+}
+
+.stir-zone {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  border-radius: 50%;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.is-stirring .stir-zone {
+  cursor: none;
 }
 
 .primary-action {
@@ -485,6 +671,7 @@ button {
   font-size: 32px;
   line-height: 1;
   cursor: pointer;
+  pointer-events: auto;
 }
 
 .back-button:focus-visible,
@@ -504,6 +691,7 @@ button {
   gap: 8px;
   width: min(340px, calc(100% - 112px));
   transform: translateX(-50%);
+  pointer-events: auto;
 }
 
 .thought-input {
@@ -562,13 +750,13 @@ button {
 
 .wand-hand {
   position: absolute;
-  top: clamp(92px, 16vh, 132px);
-  left: calc(50% + min(82px, 19vw));
+  top: clamp(74px, 13vh, 118px);
+  left: calc(50% + min(6px, 2vw));
   right: auto;
   z-index: 6;
-  width: 260px;
-  height: 250px;
-  transform-origin: 82% 12%;
+  width: min(620px, 66vw);
+  aspect-ratio: 3 / 2;
+  transform-origin: 72% 24%;
   animation: handBreath 4.8s ease-in-out infinite;
 }
 
@@ -576,83 +764,32 @@ button {
   animation: wandRelease 2600ms cubic-bezier(0.28, 0.72, 0.24, 1) both;
 }
 
-.hand {
-  position: absolute;
-  top: 16px;
-  right: -7px;
-  width: 128px;
-  height: 110px;
-  transform: rotate(-16deg);
-  filter: drop-shadow(-10px 18px 16px rgba(0, 0, 0, 0.7));
-}
-
-.palm,
-.finger,
-.thumb {
-  position: absolute;
-  display: block;
-  background:
-    radial-gradient(circle at 30% 26%, rgba(255, 235, 214, 0.32), transparent 26%),
-    linear-gradient(145deg, #8f6f5e, #4c332a 66%, #22140f);
-  border: 1px solid rgba(238, 209, 184, 0.14);
-  box-shadow: inset 0 -8px 12px rgba(36, 17, 11, 0.5);
-}
-
-.palm {
-  right: 13px;
-  top: 28px;
-  width: 66px;
-  height: 48px;
-  border-radius: 32px 24px 30px 34px;
-}
-
-.finger {
-  right: 54px;
-  height: 22px;
-  border-radius: 16px;
-  transform-origin: 100% 50%;
-}
-
-.finger-one {
-  top: 28px;
-  width: 58px;
-  transform: rotate(-8deg);
-}
-
-.finger-two {
-  top: 48px;
-  width: 50px;
-  transform: rotate(8deg);
-}
-
-.thumb {
-  right: 34px;
-  top: 60px;
-  width: 46px;
-  height: 22px;
-  border-radius: 16px;
-  transform: rotate(34deg);
-}
-
+.hand,
 .long-wand {
+  display: none;
+}
+
+.hand-asset {
   position: absolute;
-  right: 32px;
-  top: 72px;
-  width: 260px;
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #16100d, #9a7650 34%, #d0a06f 54%, #3a2418);
-  box-shadow:
-    0 0 9px rgba(0, 0, 0, 0.8),
-    inset 0 1px 1px rgba(255, 238, 205, 0.34);
-  transform: rotate(-38deg);
-  transform-origin: 100% 50%;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter:
+    saturate(0.82)
+    brightness(0.64)
+    contrast(1.1)
+    drop-shadow(-18px 24px 22px rgba(0, 0, 0, 0.56));
+  opacity: 0.92;
+  user-select: none;
+  pointer-events: none;
 }
 
 .wand-light {
   position: absolute;
-  left: -7px;
-  top: 50%;
+  left: 22.5%;
+  top: 86.8%;
   width: 13px;
   height: 13px;
   border-radius: 999px;
@@ -660,7 +797,7 @@ button {
   box-shadow:
     0 0 12px 5px rgba(123, 214, 255, 0.96),
     0 0 34px 14px rgba(63, 164, 235, 0.4);
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
   animation: wandLightPulse 1.8s ease-in-out infinite;
 }
 
@@ -831,6 +968,63 @@ button {
   }
 }
 
+@keyframes thoughtDrift {
+  0%,
+  100% {
+    translate: -8px 2px;
+  }
+
+  32% {
+    translate: 9px -6px;
+  }
+
+  66% {
+    translate: -2px 7px;
+  }
+}
+
+@keyframes thoughtSurface {
+  0%,
+  100% {
+    opacity: calc(0.14 + var(--thought-depth) * 0.36);
+    filter: blur(calc((1 - var(--thought-depth)) * 2.2px));
+  }
+
+  42% {
+    opacity: calc(0.28 + var(--thought-depth) * 0.42);
+    filter: blur(calc((1 - var(--thought-depth)) * 1.1px));
+  }
+
+  72% {
+    opacity: calc(0.08 + var(--thought-depth) * 0.3);
+    filter: blur(calc((1 - var(--thought-depth)) * 2.6px));
+  }
+}
+
+@keyframes thoughtScatter {
+  from {
+    transform:
+      translate3d(-50%, -50%, 0)
+      scale(calc(var(--thought-scale) * (0.76 + var(--thought-depth) * 0.28)));
+  }
+
+  to {
+    transform:
+      translate3d(calc(-50% + 10px), calc(-50% - 7px), 0)
+      scale(calc(var(--thought-scale) * (0.82 + var(--thought-depth) * 0.34)));
+  }
+}
+
+@keyframes stirPulse {
+  from {
+    filter: blur(0.2px) brightness(1);
+  }
+
+  to {
+    filter: blur(0.8px) brightness(1.28);
+  }
+}
+
 @keyframes thoughtRelease {
   0% {
     opacity: 1;
@@ -887,28 +1081,28 @@ button {
 
 @keyframes releaseLight {
   0% {
-    transform: translateY(-50%) scale(1);
+    transform: translate(-50%, -50%) scale(1);
     box-shadow:
       0 0 12px 5px rgba(123, 214, 255, 0.96),
       0 0 34px 14px rgba(63, 164, 235, 0.4);
   }
 
   18% {
-    transform: translateY(-50%) scale(1.8);
+    transform: translate(-50%, -50%) scale(1.8);
     box-shadow:
       0 0 16px 8px rgba(218, 250, 255, 0.98),
       0 0 50px 22px rgba(90, 192, 255, 0.52);
   }
 
   76% {
-    transform: translateY(-50%) scale(1.22);
+    transform: translate(-50%, -50%) scale(1.22);
     box-shadow:
       0 0 18px 8px rgba(123, 214, 255, 0.9),
       0 0 56px 24px rgba(63, 164, 235, 0.44);
   }
 
   100% {
-    transform: translateY(-50%) scale(0.92);
+    transform: translate(-50%, -50%) scale(0.92);
     box-shadow:
       0 0 12px 5px rgba(123, 214, 255, 0.96),
       0 0 34px 14px rgba(63, 164, 235, 0.4);
@@ -995,11 +1189,11 @@ button {
 @keyframes wandLightPulse {
   0%,
   100% {
-    transform: translateY(-50%) scale(0.86);
+    transform: translate(-50%, -50%) scale(0.86);
   }
 
   50% {
-    transform: translateY(-50%) scale(1.15);
+    transform: translate(-50%, -50%) scale(1.15);
   }
 }
 
