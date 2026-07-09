@@ -13,11 +13,37 @@
           i
         </button>
 
-        <button class="icon-button tune-button" type="button" aria-label="Настройки">
+        <button
+          class="icon-button tune-button"
+          type="button"
+          aria-label="Настройки фона"
+          aria-expanded="false"
+          aria-controls="wallpaper-menu"
+        >
           <span></span>
           <span></span>
           <span></span>
         </button>
+
+        <div id="wallpaper-menu" class="wallpaper-menu" aria-hidden="true">
+          <p class="wallpaper-menu-title">Обои</p>
+          <button class="wallpaper-option" type="button" data-wallpaper-option="forest">
+            <span class="wallpaper-swatch wallpaper-swatch-forest"></span>
+            <span>Лес</span>
+          </button>
+          <button class="wallpaper-option" type="button" data-wallpaper-option="moon">
+            <span class="wallpaper-swatch wallpaper-swatch-moon"></span>
+            <span>Луна</span>
+          </button>
+          <button class="wallpaper-option" type="button" data-wallpaper-option="deep">
+            <span class="wallpaper-swatch wallpaper-swatch-deep"></span>
+            <span>Глубина</span>
+          </button>
+          <button class="wallpaper-option" type="button" data-wallpaper-option="embers">
+            <span class="wallpaper-swatch wallpaper-swatch-embers"></span>
+            <span>Искры</span>
+          </button>
+        </div>
 
         <div class="forest-depth" aria-hidden="true"></div>
         <div class="star-field" aria-hidden="true"></div>

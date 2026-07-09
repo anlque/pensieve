@@ -6,6 +6,9 @@ const backButton = document.querySelector<HTMLButtonElement>('.back-button');
 const letGoButton = document.querySelector<HTMLButtonElement>('.let-go-button');
 const mixButton = document.querySelector<HTMLButtonElement>('.mix-button');
 const mixCloseButton = document.querySelector<HTMLButtonElement>('.mix-close-button');
+const tuneButton = document.querySelector<HTMLButtonElement>('.tune-button');
+const wallpaperMenu = document.querySelector<HTMLElement>('.wallpaper-menu');
+const wallpaperOptions = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-wallpaper-option]'));
 const thoughtForm = document.querySelector<HTMLFormElement>('.thought-form');
 const thoughtInput = document.querySelector<HTMLInputElement>('.thought-input');
 const thoughtModal = document.querySelector<HTMLElement>('.thought-modal');
@@ -20,10 +23,13 @@ const wandLight = document.querySelector<HTMLElement>('.wand-light');
 const pensieveThoughts = document.querySelector<HTMLElement>('.pensieve-thoughts');
 const captureScreen = document.querySelector<HTMLElement>('[data-screen="capture"]');
 const pensieveScene = document.querySelector<HTMLElement>('.pensieve-scene');
-const stirZone = document.querySelector<HTMLElement>('.stir-zone');
 const releaseDurationMs = 3000;
 const clearThoughtsDurationMs = 1980;
 const storageKey = 'pensieve.thoughts.v1';
+const wallpaperStorageKey = 'pensieve.wallpaper.v1';
+const wallpaperNames = ['forest', 'moon', 'deep', 'embers'] as const;
+
+type WallpaperName = (typeof wallpaperNames)[number];
 
 type PensieveThought = {
   id: number;
@@ -44,7 +50,6 @@ let releaseTimer = 0;
 let thoughtId = 0;
 let releasedThought = '';
 let thoughts: PensieveThought[] = [];
-let stirTimer = 0;
 let surfacingThoughtId: number | null = null;
 let surfacingTimer = 0;
 let releaseFrame = 0;
@@ -61,6 +66,62 @@ const thoughtPositions = [
   { x: 48, y: 74 },
   { x: 31, y: 72 },
 ];
+
+const isWallpaperName = (value: string | null): value is WallpaperName =>
+  Boolean(value && wallpaperNames.includes(value as WallpaperName));
+
+const closeWallpaperMenu = () => {
+  stage?.classList.remove('has-open-wallpaper-menu');
+  wallpaperMenu?.setAttribute('aria-hidden', 'true');
+  tuneButton?.setAttribute('aria-expanded', 'false');
+};
+
+const openWallpaperMenu = () => {
+  if (stage?.classList.contains('is-mixing')) {
+    return;
+  }
+
+  stage?.classList.add('has-open-wallpaper-menu');
+  wallpaperMenu?.setAttribute('aria-hidden', 'false');
+  tuneButton?.setAttribute('aria-expanded', 'true');
+};
+
+const toggleWallpaperMenu = () => {
+  if (stage?.classList.contains('has-open-wallpaper-menu')) {
+    closeWallpaperMenu();
+    return;
+  }
+
+  openWallpaperMenu();
+};
+
+const applyWallpaper = (wallpaper: WallpaperName) => {
+  stage?.setAttribute('data-wallpaper', wallpaper);
+
+  wallpaperOptions.forEach((option) => {
+    const isActive = option.dataset.wallpaperOption === wallpaper;
+    option.classList.toggle('is-active', isActive);
+    option.setAttribute('aria-pressed', String(isActive));
+  });
+
+  try {
+    window.localStorage.setItem(wallpaperStorageKey, wallpaper);
+  } catch {
+    // The selected wallpaper is optional polish; keep the app usable without storage.
+  }
+};
+
+const loadWallpaper = () => {
+  let savedWallpaper: string | null = null;
+
+  try {
+    savedWallpaper = window.localStorage.getItem(wallpaperStorageKey);
+  } catch {
+    savedWallpaper = null;
+  }
+
+  applyWallpaper(isWallpaperName(savedWallpaper) ? savedWallpaper : 'forest');
+};
 
 const updateLetGoButton = () => {
   const isBusy =
@@ -160,39 +221,6 @@ const clearSavedThoughts = () => {
   } catch {
     // Storage is a convenience; the app should still work without it.
   }
-};
-
-const setStirPosition = (event: PointerEvent) => {
-  if (
-    !pensieveScene ||
-    !stirZone ||
-    stage?.classList.contains('is-releasing') ||
-    stage?.classList.contains('is-clearing-thoughts')
-  ) {
-    return;
-  }
-
-  const rect = stirZone.getBoundingClientRect();
-  const x = ((event.clientX - rect.left) / rect.width) * 100;
-  const y = ((event.clientY - rect.top) / rect.height) * 100;
-  const clampedX = Math.min(92, Math.max(8, x));
-  const clampedY = Math.min(86, Math.max(14, y));
-
-  pensieveScene.style.setProperty('--stir-x', `${clampedX}%`);
-  pensieveScene.style.setProperty('--stir-y', `${clampedY}%`);
-  stage?.classList.add('is-stirring');
-
-  window.clearTimeout(stirTimer);
-  stirTimer = window.setTimeout(() => {
-    stage?.classList.remove('is-stirring');
-  }, 700);
-};
-
-const stopStirring = () => {
-  window.clearTimeout(stirTimer);
-  stirTimer = window.setTimeout(() => {
-    stage?.classList.remove('is-stirring');
-  }, 900);
 };
 
 const mix = (from: number, to: number, progress: number) => from + (to - from) * progress;
@@ -488,6 +516,7 @@ const openMixingView = () => {
   }
 
   stage?.classList.remove('has-draft-thought', 'just-released', 'just-cleared', 'is-stirring');
+  closeWallpaperMenu();
   stage?.classList.add('is-mixing');
   pensieveScene?.removeAttribute('aria-hidden');
   updateThoughtInteractivity();
@@ -532,6 +561,33 @@ backButton?.addEventListener('click', closeCaptureScreen);
 letGoButton?.addEventListener('click', clearPensieveThoughts);
 mixButton?.addEventListener('click', openMixingView);
 mixCloseButton?.addEventListener('click', closeMixingView);
+tuneButton?.addEventListener('click', toggleWallpaperMenu);
+wallpaperOptions.forEach((option) => {
+  option.addEventListener('click', () => {
+    const wallpaper = option.dataset.wallpaperOption;
+
+    if (isWallpaperName(wallpaper ?? null)) {
+      applyWallpaper(wallpaper);
+      closeWallpaperMenu();
+    }
+  });
+});
+document.addEventListener('click', (event) => {
+  if (
+    !stage?.classList.contains('has-open-wallpaper-menu') ||
+    wallpaperMenu?.contains(event.target as Node) ||
+    tuneButton?.contains(event.target as Node)
+  ) {
+    return;
+  }
+
+  closeWallpaperMenu();
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    closeWallpaperMenu();
+  }
+});
 thoughtModalClose?.addEventListener('click', closeThoughtModal);
 thoughtModal?.addEventListener('click', (event) => {
   if (event.target === thoughtModal) {
@@ -551,14 +607,6 @@ pensieveThoughts?.addEventListener('click', (event) => {
     openThoughtModal(thought);
   }
 });
-stirZone?.addEventListener('pointerdown', (event) => {
-  stirZone.setPointerCapture(event.pointerId);
-  setStirPosition(event);
-});
-stirZone?.addEventListener('pointermove', setStirPosition);
-stirZone?.addEventListener('pointerup', stopStirring);
-stirZone?.addEventListener('pointercancel', stopStirring);
-stirZone?.addEventListener('pointerleave', stopStirring);
 
 thoughtForm?.addEventListener('submit', (event) => {
   event.preventDefault();
@@ -596,8 +644,11 @@ stage?.classList.remove(
   'is-clearing-thoughts',
   'is-mixing',
   'has-open-thought',
+  'has-open-wallpaper-menu',
 );
 captureScreen?.setAttribute('aria-hidden', 'true');
 pensieveScene?.setAttribute('aria-hidden', 'true');
 thoughtModal?.setAttribute('aria-hidden', 'true');
+wallpaperMenu?.setAttribute('aria-hidden', 'true');
+loadWallpaper();
 loadSavedThoughts();
