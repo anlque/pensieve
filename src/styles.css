@@ -807,13 +807,16 @@ button {
 }
 
 .pensieve-thought.is-drag-source {
-  opacity: 0.22 !important;
-  filter: blur(1px) brightness(0.84) !important;
+  opacity: 0 !important;
+  filter: blur(2px) brightness(0.72) !important;
+  pointer-events: none !important;
 }
 
-.thought-drag-ghost {
+.app-stage .thought-drag-ghost {
   position: fixed;
-  z-index: 120;
+  z-index: 120 !important;
+  left: 0;
+  top: 0;
   animation: none !important;
   opacity: 0.98 !important;
   filter:
@@ -829,7 +832,7 @@ button {
   cursor: grabbing;
 }
 
-.thought-drag-ghost.is-drag-outside {
+.app-stage .thought-drag-ghost.is-drag-outside {
   opacity: 0.78 !important;
   filter:
     blur(0.2px)
@@ -838,11 +841,31 @@ button {
   transform: translate3d(0, 0, 0) scale(1.12) !important;
 }
 
-.thought-drag-ghost.is-drag-releasing {
+.app-stage .thought-drag-ghost.is-drag-releasing {
   position: fixed;
-  z-index: 120;
+  z-index: 120 !important;
   animation: draggedThoughtRelease 420ms cubic-bezier(0.16, 0.86, 0.22, 1) forwards !important;
   pointer-events: none;
+}
+
+.is-mixing .thought-drag-ghost {
+  z-index: 120 !important;
+  animation: none !important;
+  opacity: 0.98 !important;
+  filter:
+    blur(0)
+    brightness(1.28)
+    drop-shadow(0 0 28px rgba(125, 219, 255, 0.48)) !important;
+  transform: translate3d(0, 0, 0) scale(1.06) !important;
+}
+
+.is-mixing .thought-drag-ghost.is-drag-outside {
+  opacity: 0.78 !important;
+  transform: translate3d(0, 0, 0) scale(1.12) !important;
+}
+
+.is-mixing .thought-drag-ghost.is-drag-releasing {
+  animation: draggedThoughtRelease 420ms cubic-bezier(0.16, 0.86, 0.22, 1) forwards !important;
 }
 
 .is-dragging-thought .pensieve-scene {
