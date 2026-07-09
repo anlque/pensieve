@@ -196,6 +196,18 @@ type PensieveThought = {
   orbitDuration: number;
 };
 
+type DragState = {
+  thoughtId: number;
+  element: HTMLElement;
+  ghost: HTMLElement | null;
+  pointerId: number;
+  startX: number;
+  startY: number;
+  offsetX: number;
+  offsetY: number;
+  hasMoved: boolean;
+};
+
 let releaseTimer = 0;
 let thoughtId = 0;
 let releasedThought = '';
@@ -205,6 +217,8 @@ let surfacingTimer = 0;
 let releaseFrame = 0;
 let clearTimer = 0;
 let selectedThoughtId: number | null = null;
+let dragState: DragState | null = null;
+let suppressThoughtClick = false;
 
 const thoughtPositions = [
   { x: 50, y: 50 },
@@ -502,8 +516,11 @@ const createThoughtElement = (thought: PensieveThought) => {
 
 const updateThoughtInteractivity = () => {
   const isMixing = Boolean(stage?.classList.contains('is-mixing'));
+  const isCapturing = Boolean(stage?.classList.contains('is-capturing'));
   pensieveThoughts?.querySelectorAll<HTMLButtonElement>('.pensieve-thought').forEach((item) => {
     item.tabIndex = isMixing ? 0 : -1;
+    item.toggleAttribute('draggable', false);
+    item.setAttribute('aria-disabled', String(!isMixing && !isCapturing));
   });
 };
 
@@ -567,6 +584,185 @@ const saveThoughts = () => {
 };
 
 const getSelectedThought = () => thoughts.find((thought) => thought.id === selectedThoughtId);
+
+const isPointOutsidePensieve = (x: number, y: number) => {
+  const rect = pensieveScene?.getBoundingClientRect();
+
+  if (!rect) {
+    return false;
+  }
+
+  const releasePadding = 14;
+  return (
+    x < rect.left - releasePadding ||
+    x > rect.right + releasePadding ||
+    y < rect.top - releasePadding ||
+    y > rect.bottom + releasePadding
+  );
+};
+
+const createThoughtDragGhost = (source: HTMLElement) => {
+  const rect = source.getBoundingClientRect();
+  const ghost = source.cloneNode(true) as HTMLElement;
+  ghost.removeAttribute('id');
+  ghost.setAttribute('aria-hidden', 'true');
+  ghost.tabIndex = -1;
+  ghost.classList.remove('is-surfacing', 'is-drag-source');
+  ghost.classList.add('thought-drag-ghost');
+  ghost.style.left = `${rect.left}px`;
+  ghost.style.top = `${rect.top}px`;
+  ghost.style.width = `${rect.width}px`;
+  ghost.style.minHeight = `${rect.height}px`;
+  stage?.append(ghost);
+  return ghost;
+};
+
+const resetDraggedThought = () => {
+  if (!dragState) {
+    return;
+  }
+
+  dragState.element.classList.remove('is-drag-source');
+  dragState.ghost?.remove();
+  stage?.classList.remove('is-dragging-thought', 'can-release-dragged-thought');
+  dragState = null;
+};
+
+const removeThoughtByDrag = (thoughtIdToRemove: number, source: HTMLElement, ghost: HTMLElement | null) => {
+  thoughts = thoughts.filter((thought) => thought.id !== thoughtIdToRemove);
+  saveThoughts();
+  closeThoughtModal();
+  source.classList.add('is-drag-source');
+  ghost?.classList.remove('is-drag-outside');
+  ghost?.classList.add('is-drag-releasing');
+  stage?.classList.remove('is-dragging-thought', 'can-release-dragged-thought');
+  stage?.classList.add('just-released-dragged-thought');
+  dragState = null;
+  updateLetGoButton();
+
+  window.setTimeout(() => {
+    ghost?.remove();
+    source.remove();
+    renderPensieveThoughts();
+    stage?.classList.remove('just-released-dragged-thought');
+    suppressThoughtClick = false;
+
+    if (thoughts.length === 0 && stage?.classList.contains('is-mixing')) {
+      closeMixingView();
+    }
+  }, 420);
+};
+
+const moveDraggedThought = (event: PointerEvent) => {
+  if (!dragState || event.pointerId !== dragState.pointerId) {
+    return;
+  }
+
+  const deltaX = event.clientX - dragState.startX;
+  const deltaY = event.clientY - dragState.startY;
+  const distance = Math.hypot(deltaX, deltaY);
+
+  if (!dragState.hasMoved && distance < 8) {
+    return;
+  }
+
+  event.preventDefault();
+  dragState.hasMoved = true;
+  suppressThoughtClick = true;
+  stage?.classList.add('is-dragging-thought');
+  dragState.element.classList.add('is-drag-source');
+
+  if (!dragState.ghost) {
+    dragState.ghost = createThoughtDragGhost(dragState.element);
+  }
+
+  dragState.ghost.style.left = `${event.clientX - dragState.offsetX}px`;
+  dragState.ghost.style.top = `${event.clientY - dragState.offsetY}px`;
+
+  const isOutside = isPointOutsidePensieve(event.clientX, event.clientY);
+  dragState.ghost.classList.toggle('is-drag-outside', isOutside);
+  stage?.classList.toggle('can-release-dragged-thought', isOutside);
+};
+
+const endDraggedThought = (event: PointerEvent) => {
+  if (!dragState || event.pointerId !== dragState.pointerId) {
+    return;
+  }
+
+  const state = dragState;
+
+  try {
+    state.element.releasePointerCapture(state.pointerId);
+  } catch {
+    // Pointer capture is a progressive enhancement here.
+  }
+
+  if (!state.hasMoved) {
+    resetDraggedThought();
+    return;
+  }
+
+  event.preventDefault();
+
+  if (isPointOutsidePensieve(event.clientX, event.clientY)) {
+    removeThoughtByDrag(state.thoughtId, state.element, state.ghost);
+    return;
+  }
+
+  resetDraggedThought();
+  window.setTimeout(() => {
+    suppressThoughtClick = false;
+  }, 0);
+};
+
+const cancelDraggedThought = () => {
+  resetDraggedThought();
+  window.setTimeout(() => {
+    suppressThoughtClick = false;
+  }, 0);
+};
+
+const startThoughtDrag = (event: PointerEvent) => {
+  const isInteractive =
+    stage?.classList.contains('is-capturing') ||
+    stage?.classList.contains('is-mixing');
+
+  if (
+    !isInteractive ||
+    event.button !== 0 ||
+    stage?.classList.contains('is-releasing') ||
+    stage?.classList.contains('is-clearing-thoughts')
+  ) {
+    return;
+  }
+
+  const element = (event.target as HTMLElement).closest<HTMLElement>('.pensieve-thought');
+  const thoughtIdToDrag = Number(element?.dataset.thoughtId);
+
+  if (!element || !Number.isFinite(thoughtIdToDrag)) {
+    return;
+  }
+
+  const rect = element.getBoundingClientRect();
+  dragState = {
+    thoughtId: thoughtIdToDrag,
+    element,
+    ghost: null,
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    offsetX: event.clientX - rect.left,
+    offsetY: event.clientY - rect.top,
+    hasMoved: false,
+  };
+  suppressThoughtClick = false;
+
+  try {
+    element.setPointerCapture(event.pointerId);
+  } catch {
+    // Some browsers may not support capture on this element; document listeners still handle the drag.
+  }
+};
 
 const clearSavedThoughts = () => {
   try {
@@ -1070,6 +1266,12 @@ infoDialog?.addEventListener('click', (event) => {
 });
 thoughtInput?.addEventListener('input', syncThoughtPreview);
 pensieveThoughts?.addEventListener('click', (event) => {
+  if (suppressThoughtClick) {
+    suppressThoughtClick = false;
+    event.preventDefault();
+    return;
+  }
+
   if (!stage?.classList.contains('is-mixing')) {
     return;
   }
@@ -1081,6 +1283,10 @@ pensieveThoughts?.addEventListener('click', (event) => {
     openThoughtModal(thought);
   }
 });
+pensieveThoughts?.addEventListener('pointerdown', startThoughtDrag);
+document.addEventListener('pointermove', moveDraggedThought);
+document.addEventListener('pointerup', endDraggedThought);
+document.addEventListener('pointercancel', cancelDraggedThought);
 
 thoughtForm?.addEventListener('submit', (event) => {
   event.preventDefault();
