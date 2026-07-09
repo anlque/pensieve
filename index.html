@@ -3,12 +3,72 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Омут памяти — спокойное приложение для выгрузки мыслей, их перемешивания, редактирования и отпускания."
+    />
     <meta name="theme-color" content="#02080d" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      html,
+      body,
+      #app {
+        margin: 0;
+        min-height: 100%;
+        background: #010508;
+        color: #d9e8f8;
+      }
+
+      body {
+        overflow: hidden;
+      }
+
+      .screen-capture,
+      .wand-hand,
+      .thought-cloud,
+      .thought-stream,
+      .release-trail,
+      .wallpaper-menu,
+      .info-dialog,
+      .thought-modal {
+        opacity: 0;
+        visibility: hidden;
+      }
+    </style>
+    <script>
+      (() => {
+        const wallpapers = new Set([
+          'forest',
+          'moon',
+          'deep',
+          'embers',
+          'office',
+          'library',
+          'quidditch',
+          'custom',
+        ]);
+
+        try {
+          const savedWallpaper = window.localStorage.getItem('pensieve.wallpaper.v1');
+          const savedCustomWallpaper = window.localStorage.getItem('pensieve.customWallpaper.v1');
+          const savedLanguage = window.localStorage.getItem('pensieve.language.v1');
+          const wallpaper = wallpapers.has(savedWallpaper) ? savedWallpaper : 'forest';
+          document.documentElement.lang = savedLanguage === 'en' ? 'en' : 'ru';
+          document.documentElement.dataset.wallpaper = wallpaper === 'custom' && !savedCustomWallpaper ? 'forest' : wallpaper;
+
+          if (savedCustomWallpaper) {
+            document.documentElement.style.setProperty('--initial-custom-wallpaper-image', `url("${savedCustomWallpaper}")`);
+          }
+        } catch {
+          document.documentElement.dataset.wallpaper = 'forest';
+        }
+      })();
+    </script>
     <title>Омут памяти</title>
   </head>
   <body>
     <main id="app" class="app-shell">
-      <section class="app-stage" aria-labelledby="app-title">
+      <section class="app-stage" data-wallpaper="forest" aria-labelledby="app-title">
         <button
           class="icon-button info-button"
           type="button"
@@ -49,14 +109,48 @@
             <span class="wallpaper-swatch wallpaper-swatch-embers"></span>
             <span>Искры</span>
           </button>
+          <button class="wallpaper-option" type="button" data-wallpaper-option="office">
+            <span class="wallpaper-swatch wallpaper-swatch-office"></span>
+            <span>Кабинет</span>
+          </button>
+          <button class="wallpaper-option" type="button" data-wallpaper-option="library">
+            <span class="wallpaper-swatch wallpaper-swatch-library"></span>
+            <span>Библиотека</span>
+          </button>
+          <button class="wallpaper-option" type="button" data-wallpaper-option="quidditch">
+            <span class="wallpaper-swatch wallpaper-swatch-quidditch"></span>
+            <span>Квиддич</span>
+          </button>
+          <button class="wallpaper-option" type="button" data-wallpaper-option="custom">
+            <span class="wallpaper-swatch wallpaper-swatch-custom"></span>
+            <span>Своя картинка</span>
+          </button>
+          <input
+            class="wallpaper-upload-input"
+            type="file"
+            accept="image/*"
+            aria-label="Загрузить свою картинку для обоев"
+          />
+          <div class="language-switch" role="group" aria-label="Язык">
+            <span class="language-switch-title">Язык</span>
+            <button class="language-option" type="button" data-language-option="ru" aria-pressed="true">RU</button>
+            <button class="language-option" type="button" data-language-option="en" aria-pressed="false">EN</button>
+          </div>
         </div>
 
-        <div id="info-dialog" class="info-dialog" role="dialog" aria-modal="true" aria-hidden="true">
+        <div
+          id="info-dialog"
+          class="info-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-hidden="true"
+          aria-labelledby="info-dialog-title"
+        >
           <button class="info-close-button" type="button" aria-label="Закрыть информацию">
             ×
           </button>
           <div class="info-dialog-content">
-            <h2>Омут памяти</h2>
+            <h2 id="info-dialog-title">Омут памяти</h2>
             <p>Место, куда можно выгрузить мысли, чтобы стало легче.</p>
             <ul>
               <li>Введи мысль и отпусти её в омут палочкой.</li>
@@ -139,7 +233,13 @@
           <div class="stir-zone" aria-hidden="true"></div>
         </div>
 
-        <div class="thought-modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div
+          class="thought-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-hidden="true"
+          aria-label="Мысль"
+        >
           <button class="thought-modal-close" type="button" aria-label="Закрыть мысль">
             ×
           </button>

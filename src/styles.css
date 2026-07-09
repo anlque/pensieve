@@ -10,6 +10,7 @@
   --rim: #526170;
   --glass: rgba(163, 213, 255, 0.13);
   --scene-max: 460px;
+  --initial-custom-wallpaper-image: none;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
@@ -63,6 +64,7 @@ button {
   --stage-bottom-glow: rgba(8, 58, 83, 0.42);
   --forest-opacity: 0.8;
   --star-opacity: 1;
+  --custom-wallpaper-image: none;
   background:
     linear-gradient(180deg, rgba(3, 10, 16, 0.25), rgba(2, 4, 7, 0.92)),
     radial-gradient(circle at 50% 55%, var(--stage-glow), transparent 34%),
@@ -72,7 +74,8 @@ button {
   isolation: isolate;
 }
 
-.app-stage[data-wallpaper="moon"] {
+.app-stage[data-wallpaper="moon"],
+:root[data-wallpaper="moon"] .app-stage {
   --bg: #020711;
   --stage-glow: rgba(128, 173, 218, 0.2);
   --stage-bottom-glow: rgba(28, 50, 92, 0.38);
@@ -80,7 +83,8 @@ button {
   --star-opacity: 1.2;
 }
 
-.app-stage[data-wallpaper="deep"] {
+.app-stage[data-wallpaper="deep"],
+:root[data-wallpaper="deep"] .app-stage {
   --bg: #010508;
   --stage-glow: rgba(37, 102, 118, 0.18);
   --stage-bottom-glow: rgba(3, 86, 94, 0.4);
@@ -88,7 +92,8 @@ button {
   --star-opacity: 0.72;
 }
 
-.app-stage[data-wallpaper="embers"] {
+.app-stage[data-wallpaper="embers"],
+:root[data-wallpaper="embers"] .app-stage {
   --bg: #070506;
   --stage-glow: rgba(99, 68, 99, 0.18);
   --stage-bottom-glow: rgba(88, 39, 50, 0.36);
@@ -96,8 +101,60 @@ button {
   --star-opacity: 0.86;
 }
 
+.app-stage[data-wallpaper="office"],
+:root[data-wallpaper="office"] .app-stage {
+  --bg: #060707;
+  --stage-glow: rgba(94, 82, 121, 0.18);
+  --stage-bottom-glow: rgba(98, 67, 38, 0.28);
+  --forest-opacity: 0.72;
+  --star-opacity: 0.62;
+}
+
+.app-stage[data-wallpaper="library"],
+:root[data-wallpaper="library"] .app-stage {
+  --bg: #050607;
+  --stage-glow: rgba(75, 96, 119, 0.16);
+  --stage-bottom-glow: rgba(75, 45, 33, 0.32);
+  --forest-opacity: 0.74;
+  --star-opacity: 0.58;
+}
+
+.app-stage[data-wallpaper="quidditch"],
+:root[data-wallpaper="quidditch"] .app-stage {
+  --bg: #02080b;
+  --stage-glow: rgba(74, 123, 104, 0.18);
+  --stage-bottom-glow: rgba(21, 82, 67, 0.36);
+  --forest-opacity: 0.58;
+  --star-opacity: 0.78;
+}
+
+.app-stage[data-wallpaper="custom"],
+:root[data-wallpaper="custom"] .app-stage {
+  --stage-glow: rgba(70, 130, 158, 0.2);
+  --stage-bottom-glow: rgba(6, 31, 45, 0.5);
+  --forest-opacity: 0;
+  --star-opacity: 0.72;
+  --custom-wallpaper-image: var(--initial-custom-wallpaper-image);
+}
+
 .app-stage::before {
-  content: none;
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -4;
+  background-image:
+    linear-gradient(180deg, rgba(1, 5, 8, 0.34), rgba(1, 5, 8, 0.82)),
+    var(--custom-wallpaper-image);
+  background-position: center;
+  background-size: cover;
+  opacity: 0;
+  filter: saturate(0.78) brightness(0.74);
+  transition: opacity 360ms ease;
+}
+
+.app-stage[data-wallpaper="custom"]::before,
+:root[data-wallpaper="custom"] .app-stage::before {
+  opacity: 1;
 }
 
 .icon-button {
@@ -111,6 +168,23 @@ button {
   border-radius: 999px;
   background: transparent;
   color: rgba(220, 239, 255, 0.86);
+  cursor: pointer;
+  transition:
+    color 180ms ease,
+    opacity 180ms ease,
+    border-color 180ms ease,
+    filter 180ms ease,
+    transform 200ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.icon-button:hover,
+.icon-button:focus-visible {
+  color: rgba(247, 252, 255, 0.98);
+  filter:
+    drop-shadow(0 0 8px rgba(148, 224, 255, 0.58))
+    drop-shadow(0 0 18px rgba(77, 172, 236, 0.2));
+  outline: none;
+  transform: translateY(-1px);
 }
 
 .info-button {
@@ -149,6 +223,7 @@ button {
 .has-open-info .info-button {
   color: rgba(242, 250, 255, 0.96);
   border-color: rgba(218, 249, 255, 0.9);
+  filter: drop-shadow(0 0 10px rgba(148, 224, 255, 0.56));
 }
 
 .is-mixing .tune-button {
@@ -201,6 +276,54 @@ button {
   color: rgba(226, 240, 252, 0.68);
   font-size: 12px;
   line-height: 1;
+}
+
+.language-switch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(177, 226, 255, 0.14);
+}
+
+.language-switch-title {
+  color: rgba(226, 240, 252, 0.62);
+  font-size: 12px;
+}
+
+.language-option {
+  display: grid;
+  place-items: center;
+  min-width: 38px;
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid rgba(169, 224, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(4, 16, 26, 0.42);
+  color: rgba(226, 240, 252, 0.7);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 180ms ease;
+}
+
+.language-option:hover,
+.language-option:focus-visible,
+.language-option.is-active {
+  border-color: rgba(181, 232, 255, 0.52);
+  background: rgba(130, 207, 255, 0.12);
+  color: rgba(247, 252, 255, 0.96);
+  box-shadow: 0 0 16px rgba(88, 187, 255, 0.12);
+}
+
+.language-option:focus-visible {
+  outline: 1px solid rgba(181, 239, 255, 0.9);
+  outline-offset: 2px;
 }
 
 .wallpaper-option {
@@ -280,6 +403,42 @@ button {
     #070506;
 }
 
+.wallpaper-swatch-office {
+  background:
+    radial-gradient(circle at 72% 26%, rgba(172, 132, 80, 0.38), transparent 18%),
+    linear-gradient(90deg, rgba(54, 35, 25, 0.8) 0 14%, transparent 14% 20%, rgba(54, 35, 25, 0.7) 20% 30%, transparent 30%),
+    #060707;
+}
+
+.wallpaper-swatch-library {
+  background:
+    linear-gradient(90deg, rgba(86, 51, 35, 0.7) 0 14%, transparent 14% 19%, rgba(86, 51, 35, 0.65) 19% 32%, transparent 32%),
+    radial-gradient(circle at 56% 72%, rgba(91, 140, 170, 0.28), transparent 28%),
+    #050607;
+}
+
+.wallpaper-swatch-quidditch {
+  background:
+    radial-gradient(ellipse at 50% 76%, rgba(51, 142, 91, 0.36), transparent 34%),
+    radial-gradient(circle at 70% 22%, rgba(164, 212, 255, 0.36), transparent 18%),
+    #02080b;
+}
+
+.wallpaper-swatch-custom {
+  background:
+    radial-gradient(circle at 54% 34%, rgba(225, 244, 255, 0.38), transparent 18%),
+    linear-gradient(135deg, rgba(56, 117, 143, 0.55), rgba(33, 21, 52, 0.64)),
+    #03080c;
+}
+
+.wallpaper-upload-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .forest-depth {
   position: absolute;
   inset: 0;
@@ -293,26 +452,55 @@ button {
   filter: blur(0.2px);
 }
 
-.app-stage[data-wallpaper="moon"] .forest-depth {
+.app-stage[data-wallpaper="moon"] .forest-depth,
+:root[data-wallpaper="moon"] .forest-depth {
   background:
     radial-gradient(circle at 68% 16%, rgba(220, 239, 255, 0.58) 0 18px, rgba(129, 174, 213, 0.08) 19px 58px, transparent 60px),
     linear-gradient(88deg, transparent 0 8%, rgba(10, 19, 31, 0.28) 8% 8.4%, transparent 9%),
     linear-gradient(96deg, transparent 0 91%, rgba(10, 19, 31, 0.24) 91% 91.4%, transparent 92%);
 }
 
-.app-stage[data-wallpaper="deep"] .forest-depth {
+.app-stage[data-wallpaper="deep"] .forest-depth,
+:root[data-wallpaper="deep"] .forest-depth {
   background:
     radial-gradient(ellipse at 50% 84%, rgba(24, 130, 139, 0.22), transparent 38%),
     radial-gradient(ellipse at 30% 25%, rgba(38, 101, 111, 0.16), transparent 24%),
     radial-gradient(ellipse at 74% 18%, rgba(25, 86, 101, 0.12), transparent 24%);
 }
 
-.app-stage[data-wallpaper="embers"] .forest-depth {
+.app-stage[data-wallpaper="embers"] .forest-depth,
+:root[data-wallpaper="embers"] .forest-depth {
   background:
     radial-gradient(circle at 26% 18%, rgba(143, 98, 180, 0.16), transparent 24%),
     radial-gradient(circle at 75% 76%, rgba(168, 71, 82, 0.14), transparent 28%),
     linear-gradient(88deg, transparent 0 8%, rgba(22, 17, 22, 0.34) 8% 8.4%, transparent 9%),
     linear-gradient(96deg, transparent 0 91%, rgba(22, 17, 22, 0.28) 91% 91.4%, transparent 92%);
+}
+
+.app-stage[data-wallpaper="office"] .forest-depth,
+:root[data-wallpaper="office"] .forest-depth {
+  background:
+    radial-gradient(circle at 72% 18%, rgba(196, 148, 83, 0.2), transparent 22%),
+    radial-gradient(ellipse at 38% 20%, rgba(86, 66, 103, 0.18), transparent 26%),
+    linear-gradient(90deg, transparent 0 13%, rgba(58, 38, 28, 0.3) 13% 14%, transparent 14% 21%, rgba(58, 38, 28, 0.24) 21% 22%, transparent 22%),
+    linear-gradient(96deg, transparent 0 88%, rgba(58, 38, 28, 0.22) 88% 88.5%, transparent 89%);
+}
+
+.app-stage[data-wallpaper="library"] .forest-depth,
+:root[data-wallpaper="library"] .forest-depth {
+  background:
+    linear-gradient(90deg, rgba(72, 43, 31, 0.2) 0 9%, transparent 9% 16%, rgba(72, 43, 31, 0.18) 16% 26%, transparent 26%),
+    radial-gradient(ellipse at 50% 20%, rgba(66, 91, 112, 0.14), transparent 26%),
+    radial-gradient(ellipse at 50% 82%, rgba(91, 51, 35, 0.14), transparent 38%);
+}
+
+.app-stage[data-wallpaper="quidditch"] .forest-depth,
+:root[data-wallpaper="quidditch"] .forest-depth {
+  background:
+    radial-gradient(ellipse at 50% 92%, rgba(44, 145, 94, 0.2), transparent 42%),
+    radial-gradient(circle at 72% 18%, rgba(141, 205, 255, 0.14), transparent 24%),
+    linear-gradient(88deg, transparent 0 8%, rgba(11, 35, 26, 0.24) 8% 8.4%, transparent 9%),
+    linear-gradient(96deg, transparent 0 91%, rgba(11, 35, 26, 0.22) 91% 91.4%, transparent 92%);
 }
 
 .star-field {
@@ -328,7 +516,8 @@ button {
   animation: starBreath 5.8s ease-in-out infinite alternate;
 }
 
-.app-stage[data-wallpaper="moon"] .star-field {
+.app-stage[data-wallpaper="moon"] .star-field,
+:root[data-wallpaper="moon"] .star-field {
   background:
     radial-gradient(circle at 21% 14%, rgba(156, 214, 255, 0.82) 0 1px, transparent 2px),
     radial-gradient(circle at 48% 26%, rgba(156, 214, 255, 0.48) 0 1px, transparent 2px),
@@ -336,19 +525,46 @@ button {
     radial-gradient(circle at 58% 9%, rgba(156, 214, 255, 0.62) 0 1px, transparent 2px);
 }
 
-.app-stage[data-wallpaper="deep"] .star-field {
+.app-stage[data-wallpaper="deep"] .star-field,
+:root[data-wallpaper="deep"] .star-field {
   background:
     radial-gradient(circle at 31% 72%, rgba(120, 220, 224, 0.42) 0 1px, transparent 2px),
     radial-gradient(circle at 64% 66%, rgba(120, 220, 224, 0.3) 0 1px, transparent 2px),
     radial-gradient(circle at 51% 38%, rgba(120, 220, 224, 0.25) 0 1px, transparent 2px);
 }
 
-.app-stage[data-wallpaper="embers"] .star-field {
+.app-stage[data-wallpaper="embers"] .star-field,
+:root[data-wallpaper="embers"] .star-field {
   background:
     radial-gradient(circle at 28% 11%, rgba(183, 142, 238, 0.58) 0 1px, transparent 2px),
     radial-gradient(circle at 68% 18%, rgba(229, 120, 137, 0.42) 0 1px, transparent 2px),
     radial-gradient(circle at 76% 70%, rgba(229, 120, 137, 0.32) 0 1px, transparent 2px),
     radial-gradient(circle at 21% 42%, rgba(183, 142, 238, 0.28) 0 1px, transparent 2px);
+}
+
+.app-stage[data-wallpaper="office"] .star-field,
+:root[data-wallpaper="office"] .star-field {
+  background:
+    radial-gradient(circle at 66% 18%, rgba(238, 192, 126, 0.38) 0 1px, transparent 2px),
+    radial-gradient(circle at 31% 22%, rgba(169, 146, 225, 0.32) 0 1px, transparent 2px),
+    radial-gradient(circle at 76% 66%, rgba(238, 192, 126, 0.24) 0 1px, transparent 2px);
+}
+
+.app-stage[data-wallpaper="library"] .star-field,
+:root[data-wallpaper="library"] .star-field {
+  background:
+    radial-gradient(circle at 24% 18%, rgba(197, 151, 100, 0.34) 0 1px, transparent 2px),
+    radial-gradient(circle at 52% 26%, rgba(104, 171, 211, 0.22) 0 1px, transparent 2px),
+    radial-gradient(circle at 74% 70%, rgba(197, 151, 100, 0.2) 0 1px, transparent 2px);
+}
+
+.app-stage[data-wallpaper="quidditch"] .star-field,
+:root[data-wallpaper="quidditch"] .star-field {
+  background:
+    radial-gradient(circle at 28% 14%, rgba(164, 220, 255, 0.58) 0 1px, transparent 2px),
+    radial-gradient(circle at 68% 18%, rgba(164, 220, 255, 0.42) 0 1px, transparent 2px),
+    radial-gradient(circle at 76% 52%, rgba(126, 214, 163, 0.26) 0 1px, transparent 2px),
+    radial-gradient(circle at 21% 42%, rgba(126, 214, 163, 0.24) 0 1px, transparent 2px);
 }
 
 .screen {
@@ -398,6 +614,17 @@ button {
     opacity 520ms ease 140ms,
     transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1) 120ms,
     visibility 0ms linear 0ms;
+}
+
+.is-capturing .wand-hand {
+  opacity: 1;
+  visibility: visible;
+}
+
+.is-capturing .thought-cloud,
+.is-capturing .thought-stream,
+.is-capturing .release-trail {
+  visibility: visible;
 }
 
 .app-stage:not(.is-capturing) .pensieve-thoughts {
@@ -833,7 +1060,7 @@ button {
 
 .is-mixing .pensieve-scene {
   bottom: 50%;
-  width: min(860px, 116vw);
+  width: min(980px, 128vw);
   z-index: 21;
   filter: saturate(1.22) brightness(1.1);
   transform: translate(-50%, 50%);
@@ -869,8 +1096,8 @@ button {
 .is-mixing .pensieve-thought {
   left: 50%;
   top: 50%;
-  width: clamp(96px, 15vw, 142px);
-  min-height: 62px;
+  width: clamp(108px, 15.5vw, 154px);
+  min-height: 66px;
   z-index: 13;
   color: rgba(244, 250, 255, 0.94);
   font-size: clamp(11px, 1.8vw, 15px);
@@ -998,7 +1225,7 @@ button {
 
 .back-button {
   position: absolute;
-  top: clamp(18px, 4vh, 38px);
+  top: clamp(62px, 9vh, 92px);
   left: clamp(18px, 5vw, 54px);
   z-index: 12;
   width: 34px;
@@ -1027,10 +1254,11 @@ button {
 .let-go-button,
 .mix-button {
   position: absolute;
-  top: clamp(86px, 12vh, 126px);
-  left: 50%;
+  top: auto;
+  left: auto;
+  right: clamp(18px, 5vw, 54px);
   z-index: 12;
-  min-width: 132px;
+  min-width: 126px;
   min-height: 34px;
   padding: 8px 16px;
   border: 1px solid rgba(169, 224, 255, 0.3);
@@ -1047,7 +1275,7 @@ button {
   white-space: nowrap;
   cursor: pointer;
   opacity: 0.78;
-  transform: translateX(-50%);
+  transform: translateX(0);
   transition:
     opacity 220ms ease,
     border-color 220ms ease,
@@ -1057,11 +1285,15 @@ button {
 }
 
 .let-go-button {
-  transform: translateX(calc(-100% - 8px));
+  top: clamp(386px, 53vh, 500px);
+  bottom: auto;
+  transform: translateX(0);
 }
 
 .mix-button {
-  transform: translateX(8px);
+  top: clamp(430px, calc(53vh + 44px), 544px);
+  bottom: auto;
+  transform: translateX(0);
 }
 
 .let-go-button[hidden],
@@ -1088,12 +1320,12 @@ button {
 
 .let-go-button:hover,
 .let-go-button:focus-visible {
-  transform: translateX(calc(-100% - 8px)) translateY(-1px);
+  transform: translateY(-1px);
 }
 
 .mix-button:hover,
 .mix-button:focus-visible {
-  transform: translateX(8px) translateY(-1px);
+  transform: translateY(-1px);
 }
 
 .mix-button:disabled {
@@ -1250,13 +1482,24 @@ button {
 .wand-hand {
   position: absolute;
   top: clamp(42px, 8vh, 84px);
-  left: calc(50% + min(6px, 2vw));
+  left: calc(50% + min(34px, 6vw));
   right: auto;
   z-index: 6;
-  width: min(620px, 66vw);
+  width: min(700px, 72vw);
   aspect-ratio: 3 / 2;
   transform-origin: 72% 24%;
   animation: handBreath 4.8s ease-in-out infinite;
+  -webkit-mask-image: linear-gradient(100deg, #000 0 72%, rgba(0, 0, 0, 0.72) 84%, transparent 100%);
+  mask-image: linear-gradient(100deg, #000 0 72%, rgba(0, 0, 0, 0.72) 84%, transparent 100%);
+}
+
+.wand-hand::after {
+  content: "";
+  position: absolute;
+  inset: -8% -10% -8% 68%;
+  background: linear-gradient(90deg, transparent, rgba(2, 7, 11, 0.7) 64%, rgba(2, 7, 11, 0.98));
+  filter: blur(18px);
+  pointer-events: none;
 }
 
 .is-releasing .wand-hand {
@@ -1828,7 +2071,7 @@ button {
       rotate(var(--orbit-angle))
       translate3d(var(--orbit-radius-x), 0, 0)
       rotate(var(--orbit-angle-inverse))
-      scale(calc(var(--thought-scale) * 1.02));
+      scale(calc(var(--thought-scale) * 1.04));
   }
 
   to {
@@ -1836,7 +2079,7 @@ button {
       rotate(var(--orbit-angle-end))
       translate3d(var(--orbit-radius-x), 0, 0)
       rotate(var(--orbit-angle-end-inverse))
-      scale(calc(var(--thought-scale) * 1.02));
+      scale(calc(var(--thought-scale) * 1.04));
   }
 }
 
@@ -2274,6 +2517,109 @@ button {
 
   .wand-hand {
     top: 54px;
+  }
+}
+
+@media (max-width: 860px) {
+  .screen-capture {
+    --thought-anchor-x: min(62px, 12vw);
+    --thought-stream-x: min(34px, 7vw);
+  }
+
+  .wand-hand {
+    top: clamp(54px, 8vh, 76px);
+    left: calc(50% - min(42px, 6vw));
+    width: min(620px, 92vw);
+    transform-origin: 74% 25%;
+    -webkit-mask-image: linear-gradient(100deg, #000 0 76%, rgba(0, 0, 0, 0.68) 88%, transparent 100%);
+    mask-image: linear-gradient(100deg, #000 0 76%, rgba(0, 0, 0, 0.68) 88%, transparent 100%);
+  }
+
+  .wand-hand::after {
+    inset: -10% -14% -10% 72%;
+  }
+
+  .wand-light {
+    left: 22.5%;
+    top: 86.8%;
+  }
+}
+
+@media (max-width: 520px) {
+  .screen-capture {
+    --thought-anchor-x: min(42px, 11vw);
+    --thought-stream-x: min(24px, 6vw);
+  }
+
+  .is-capturing .pensieve-scene {
+    bottom: clamp(52px, 9vh, 78px);
+    width: min(420px, 96vw);
+  }
+
+  .wand-hand {
+    top: clamp(58px, 9vh, 72px);
+    left: calc(50% - min(70px, 18vw));
+    width: min(520px, 112vw);
+    aspect-ratio: 3 / 2;
+  }
+
+  .thought-cloud {
+    top: clamp(314px, 51vh, 374px);
+    width: min(132px, 43%);
+    min-height: 86px;
+    padding: 20px 16px;
+    font-size: 14px;
+  }
+
+  .thought-stream {
+    top: 74px;
+    height: min(360px, 54vh);
+  }
+
+  .let-go-button,
+  .mix-button {
+    right: 14px;
+    min-width: 116px;
+    min-height: 32px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .let-go-button {
+    top: clamp(318px, 48vh, 356px);
+  }
+
+  .mix-button {
+    top: clamp(358px, calc(48vh + 40px), 396px);
+  }
+
+  .is-mixing .pensieve-scene {
+    width: min(780px, 148vw);
+  }
+
+  .is-mixing .pensieve-thought {
+    width: clamp(98px, 30vw, 128px);
+    min-height: 60px;
+  }
+}
+
+@media (max-width: 390px) and (max-height: 720px) {
+  .is-capturing .pensieve-scene {
+    bottom: 54px;
+  }
+
+  .let-go-button {
+    top: 306px;
+  }
+
+  .mix-button {
+    top: 344px;
+  }
+
+  .wand-hand {
+    top: 56px;
+    left: calc(50% - 78px);
+    width: 430px;
   }
 }
 

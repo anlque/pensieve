@@ -12,6 +12,8 @@ const infoCloseButton = document.querySelector<HTMLButtonElement>('.info-close-b
 const tuneButton = document.querySelector<HTMLButtonElement>('.tune-button');
 const wallpaperMenu = document.querySelector<HTMLElement>('.wallpaper-menu');
 const wallpaperOptions = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-wallpaper-option]'));
+const wallpaperUploadInput = document.querySelector<HTMLInputElement>('.wallpaper-upload-input');
+const languageOptions = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-language-option]'));
 const thoughtForm = document.querySelector<HTMLFormElement>('.thought-form');
 const thoughtInput = document.querySelector<HTMLInputElement>('.thought-input');
 const thoughtModal = document.querySelector<HTMLElement>('.thought-modal');
@@ -36,9 +38,148 @@ const releaseDurationMs = 3000;
 const clearThoughtsDurationMs = 1980;
 const storageKey = 'pensieve.thoughts.v1';
 const wallpaperStorageKey = 'pensieve.wallpaper.v1';
-const wallpaperNames = ['forest', 'moon', 'deep', 'embers'] as const;
+const customWallpaperStorageKey = 'pensieve.customWallpaper.v1';
+const languageStorageKey = 'pensieve.language.v1';
+const wallpaperNames = ['forest', 'moon', 'deep', 'embers', 'office', 'library', 'quidditch', 'custom'] as const;
+const languageNames = ['ru', 'en'] as const;
 
 type WallpaperName = (typeof wallpaperNames)[number];
+type LanguageName = (typeof languageNames)[number];
+
+type TranslationKey =
+  | 'app.title'
+  | 'app.description'
+  | 'info.button'
+  | 'settings.button'
+  | 'settings.wallpaper'
+  | 'settings.language'
+  | 'wallpaper.forest'
+  | 'wallpaper.moon'
+  | 'wallpaper.deep'
+  | 'wallpaper.embers'
+  | 'wallpaper.office'
+  | 'wallpaper.library'
+  | 'wallpaper.quidditch'
+  | 'wallpaper.custom'
+  | 'wallpaper.upload'
+  | 'info.close'
+  | 'info.title'
+  | 'info.summary'
+  | 'info.item.add'
+  | 'info.item.mix'
+  | 'info.item.edit'
+  | 'info.item.wallpaper'
+  | 'hero.title'
+  | 'hero.subtitle'
+  | 'back'
+  | 'thought.label'
+  | 'thought.placeholder'
+  | 'thought.submit'
+  | 'thought.preview'
+  | 'letGo'
+  | 'mix'
+  | 'mix.close'
+  | 'modal.label'
+  | 'modal.close'
+  | 'modal.actions'
+  | 'modal.edit'
+  | 'modal.delete'
+  | 'modal.editLabel'
+  | 'modal.save'
+  | 'modal.cancel'
+  | 'wand.button'
+  | 'home.cta';
+
+const translations: Record<LanguageName, Record<TranslationKey, string>> = {
+  ru: {
+    'app.title': 'Омут памяти',
+    'app.description': 'Омут памяти — спокойное приложение для выгрузки мыслей, их перемешивания, редактирования и отпускания.',
+    'info.button': 'Информация',
+    'settings.button': 'Настройки фона',
+    'settings.wallpaper': 'Обои',
+    'settings.language': 'Язык',
+    'wallpaper.forest': 'Лес',
+    'wallpaper.moon': 'Луна',
+    'wallpaper.deep': 'Глубина',
+    'wallpaper.embers': 'Искры',
+    'wallpaper.office': 'Кабинет',
+    'wallpaper.library': 'Библиотека',
+    'wallpaper.quidditch': 'Игровое поле',
+    'wallpaper.custom': 'Своя картинка',
+    'wallpaper.upload': 'Загрузить свою картинку для обоев',
+    'info.close': 'Закрыть информацию',
+    'info.title': 'Омут памяти',
+    'info.summary': 'Место, куда можно выгрузить мысли, чтобы стало легче.',
+    'info.item.add': 'Введи мысль и отпусти её в омут палочкой.',
+    'info.item.mix': 'Перемешай омут, чтобы рассмотреть мысли ближе.',
+    'info.item.edit': 'Открой мысль, измени её или удали.',
+    'info.item.wallpaper': 'Смени обои через настройки справа.',
+    'hero.title': 'Омут<br />памяти',
+    'hero.subtitle': 'Твои мысли важны.<br />Выгрузи их. Отпусти.',
+    back: 'Назад',
+    'thought.label': 'Мысль',
+    'thought.placeholder': 'Вытащи мысль...',
+    'thought.submit': 'Поймать мысль',
+    'thought.preview': 'Нужно позвонить маме',
+    letGo: 'Отпустить мысли',
+    mix: 'Перемешать',
+    'mix.close': 'Закрыть омут',
+    'modal.label': 'Мысль',
+    'modal.close': 'Закрыть мысль',
+    'modal.actions': 'Действия с мыслью',
+    'modal.edit': 'Изменить',
+    'modal.delete': 'Удалить',
+    'modal.editLabel': 'Редактировать мысль',
+    'modal.save': 'Сохранить',
+    'modal.cancel': 'Отмена',
+    'wand.button': 'Взять мысль палочкой',
+    'home.cta': 'Коснись и начни<br />выгружать мысли',
+  },
+  en: {
+    'app.title': 'Memory Bowl',
+    'app.description': 'Memory Bowl is a calm app for unloading, mixing, editing, and releasing thoughts.',
+    'info.button': 'Information',
+    'settings.button': 'Background settings',
+    'settings.wallpaper': 'Wallpaper',
+    'settings.language': 'Language',
+    'wallpaper.forest': 'Forest',
+    'wallpaper.moon': 'Moon',
+    'wallpaper.deep': 'Depth',
+    'wallpaper.embers': 'Embers',
+    'wallpaper.office': 'Study',
+    'wallpaper.library': 'Library',
+    'wallpaper.quidditch': 'Playing field',
+    'wallpaper.custom': 'Custom image',
+    'wallpaper.upload': 'Upload your own wallpaper image',
+    'info.close': 'Close information',
+    'info.title': 'Memory Bowl',
+    'info.summary': 'A quiet place to unload thoughts when your mind feels crowded.',
+    'info.item.add': 'Write a thought and release it into the bowl with the wand.',
+    'info.item.mix': 'Mix the bowl to look at your thoughts up close.',
+    'info.item.edit': 'Open a thought to edit it or delete it.',
+    'info.item.wallpaper': 'Change the wallpaper from the settings on the right.',
+    'hero.title': 'Memory<br />Bowl',
+    'hero.subtitle': 'Your thoughts matter.<br />Unload them. Let go.',
+    back: 'Back',
+    'thought.label': 'Thought',
+    'thought.placeholder': 'Pull out a thought...',
+    'thought.submit': 'Catch thought',
+    'thought.preview': 'Need to call mom',
+    letGo: 'Release thoughts',
+    mix: 'Mix',
+    'mix.close': 'Close bowl',
+    'modal.label': 'Thought',
+    'modal.close': 'Close thought',
+    'modal.actions': 'Thought actions',
+    'modal.edit': 'Edit',
+    'modal.delete': 'Delete',
+    'modal.editLabel': 'Edit thought',
+    'modal.save': 'Save',
+    'modal.cancel': 'Cancel',
+    'wand.button': 'Take a thought with the wand',
+    'home.cta': 'Touch to start<br />unloading thoughts',
+  },
+};
 
 type PensieveThought = {
   id: number;
@@ -79,6 +220,113 @@ const thoughtPositions = [
 
 const isWallpaperName = (value: string | null): value is WallpaperName =>
   Boolean(value && wallpaperNames.includes(value as WallpaperName));
+
+const isLanguageName = (value: string | null): value is LanguageName =>
+  Boolean(value && languageNames.includes(value as LanguageName));
+
+let currentLanguage: LanguageName = isLanguageName(document.documentElement.lang) ? document.documentElement.lang : 'ru';
+
+const t = (key: TranslationKey) => translations[currentLanguage][key];
+
+const setText = (selector: string, key: TranslationKey) => {
+  const element = document.querySelector<HTMLElement>(selector);
+  if (element) {
+    element.textContent = t(key);
+  }
+};
+
+const setHtml = (selector: string, key: TranslationKey) => {
+  const element = document.querySelector<HTMLElement>(selector);
+  if (element) {
+    element.innerHTML = t(key);
+  }
+};
+
+const setAttribute = (selector: string, attribute: string, key: TranslationKey) => {
+  const element = document.querySelector<HTMLElement>(selector);
+  if (element) {
+    element.setAttribute(attribute, t(key));
+  }
+};
+
+const applyLanguage = (language: LanguageName) => {
+  currentLanguage = language;
+  document.documentElement.lang = language;
+  document.title = t('app.title');
+  document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', t('app.description'));
+
+  setAttribute('.info-button', 'aria-label', 'info.button');
+  setAttribute('.tune-button', 'aria-label', 'settings.button');
+  setText('.wallpaper-menu-title', 'settings.wallpaper');
+  setText('.language-switch-title', 'settings.language');
+  setAttribute('.language-switch', 'aria-label', 'settings.language');
+  setText('[data-wallpaper-option="forest"] span:last-child', 'wallpaper.forest');
+  setText('[data-wallpaper-option="moon"] span:last-child', 'wallpaper.moon');
+  setText('[data-wallpaper-option="deep"] span:last-child', 'wallpaper.deep');
+  setText('[data-wallpaper-option="embers"] span:last-child', 'wallpaper.embers');
+  setText('[data-wallpaper-option="office"] span:last-child', 'wallpaper.office');
+  setText('[data-wallpaper-option="library"] span:last-child', 'wallpaper.library');
+  setText('[data-wallpaper-option="quidditch"] span:last-child', 'wallpaper.quidditch');
+  setText('[data-wallpaper-option="custom"] span:last-child', 'wallpaper.custom');
+  setAttribute('.wallpaper-upload-input', 'aria-label', 'wallpaper.upload');
+  setAttribute('.info-close-button', 'aria-label', 'info.close');
+  setText('#info-dialog-title', 'info.title');
+  setText('.info-dialog-content p', 'info.summary');
+  setText('.info-dialog-content li:nth-child(1)', 'info.item.add');
+  setText('.info-dialog-content li:nth-child(2)', 'info.item.mix');
+  setText('.info-dialog-content li:nth-child(3)', 'info.item.edit');
+  setText('.info-dialog-content li:nth-child(4)', 'info.item.wallpaper');
+  setHtml('#app-title', 'hero.title');
+  setHtml('.hero-copy p', 'hero.subtitle');
+  setAttribute('.back-button', 'aria-label', 'back');
+  setText('label[for="thought-input"]', 'thought.label');
+  setAttribute('.thought-input', 'placeholder', 'thought.placeholder');
+  setAttribute('.thought-submit', 'aria-label', 'thought.submit');
+  if (thoughtCloudText && !thoughtInput?.value.trim()) {
+    thoughtCloudText.textContent = t('thought.preview');
+  }
+  setText('.let-go-button', 'letGo');
+  setText('.mix-button', 'mix');
+  setAttribute('.mix-close-button', 'aria-label', 'mix.close');
+  setAttribute('.thought-modal', 'aria-label', 'modal.label');
+  setAttribute('.thought-modal-close', 'aria-label', 'modal.close');
+  setAttribute('.thought-modal-actions', 'aria-label', 'modal.actions');
+  setText('.thought-edit-button', 'modal.edit');
+  setText('.thought-delete-button', 'modal.delete');
+  setText('label[for="thought-edit-input"]', 'modal.editLabel');
+  setText('.thought-save-button', 'modal.save');
+  setText('.thought-cancel-button', 'modal.cancel');
+  setAttribute('.wand-button', 'aria-label', 'wand.button');
+  setHtml('.primary-action p', 'home.cta');
+
+  languageOptions.forEach((option) => {
+    const isActive = option.dataset.languageOption === language;
+    option.classList.toggle('is-active', isActive);
+    option.setAttribute('aria-pressed', String(isActive));
+  });
+};
+
+const saveLanguage = (language: LanguageName) => {
+  applyLanguage(language);
+
+  try {
+    window.localStorage.setItem(languageStorageKey, language);
+  } catch {
+    // Language preference is optional; the default copy remains usable.
+  }
+};
+
+const loadLanguage = () => {
+  let savedLanguage: string | null = null;
+
+  try {
+    savedLanguage = window.localStorage.getItem(languageStorageKey);
+  } catch {
+    savedLanguage = null;
+  }
+
+  applyLanguage(isLanguageName(savedLanguage) ? savedLanguage : currentLanguage);
+};
 
 const closeWallpaperMenu = () => {
   stage?.classList.remove('has-open-wallpaper-menu');
@@ -122,6 +370,7 @@ const toggleWallpaperMenu = () => {
 
 const applyWallpaper = (wallpaper: WallpaperName) => {
   stage?.setAttribute('data-wallpaper', wallpaper);
+  document.documentElement.dataset.wallpaper = wallpaper;
 
   wallpaperOptions.forEach((option) => {
     const isActive = option.dataset.wallpaperOption === wallpaper;
@@ -136,6 +385,24 @@ const applyWallpaper = (wallpaper: WallpaperName) => {
   }
 };
 
+const loadCustomWallpaperImage = () => {
+  try {
+    const savedImage = window.localStorage.getItem(customWallpaperStorageKey);
+
+    if (savedImage) {
+      stage?.style.setProperty('--custom-wallpaper-image', `url("${savedImage}")`);
+      document.documentElement.style.setProperty('--initial-custom-wallpaper-image', `url("${savedImage}")`);
+      return true;
+    }
+  } catch {
+    // The custom image is optional; fall back to built-in wallpapers.
+  }
+
+  stage?.style.removeProperty('--custom-wallpaper-image');
+  document.documentElement.style.removeProperty('--initial-custom-wallpaper-image');
+  return false;
+};
+
 const loadWallpaper = () => {
   let savedWallpaper: string | null = null;
 
@@ -145,7 +412,66 @@ const loadWallpaper = () => {
     savedWallpaper = null;
   }
 
-  applyWallpaper(isWallpaperName(savedWallpaper) ? savedWallpaper : 'forest');
+  const hasCustomWallpaper = loadCustomWallpaperImage();
+  const wallpaper = isWallpaperName(savedWallpaper) ? savedWallpaper : 'forest';
+
+  applyWallpaper(wallpaper === 'custom' && !hasCustomWallpaper ? 'forest' : wallpaper);
+};
+
+const readImageFile = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener('load', () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error('Unable to read image file.'));
+    });
+    reader.addEventListener('error', () => reject(reader.error ?? new Error('Unable to read image file.')));
+    reader.readAsDataURL(file);
+  });
+
+const loadImage = (source: string) =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener('load', () => resolve(image));
+    image.addEventListener('error', () => reject(new Error('Unable to load image.')));
+    image.src = source;
+  });
+
+const compressWallpaperImage = async (file: File) => {
+  const source = await readImageFile(file);
+  const image = await loadImage(source);
+  const maxSide = 1600;
+  const ratio = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+  const width = Math.max(1, Math.round(image.naturalWidth * ratio));
+  const height = Math.max(1, Math.round(image.naturalHeight * ratio));
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  if (!context) {
+    return source;
+  }
+
+  canvas.width = width;
+  canvas.height = height;
+  context.drawImage(image, 0, 0, width, height);
+  return canvas.toDataURL('image/jpeg', 0.82);
+};
+
+const saveCustomWallpaper = async (file: File) => {
+  try {
+    const imageUrl = await compressWallpaperImage(file);
+    window.localStorage.setItem(customWallpaperStorageKey, imageUrl);
+    stage?.style.setProperty('--custom-wallpaper-image', `url("${imageUrl}")`);
+    document.documentElement.style.setProperty('--initial-custom-wallpaper-image', `url("${imageUrl}")`);
+    applyWallpaper('custom');
+    closeWallpaperMenu();
+  } catch {
+    wallpaperUploadInput?.focus();
+  }
 };
 
 const updateLetGoButton = () => {
@@ -171,7 +497,6 @@ const createThoughtElement = (thought: PensieveThought) => {
   item.type = 'button';
   item.tabIndex = -1;
   item.dataset.thoughtId = String(thought.id);
-  item.setAttribute('aria-label', `Показать мысль: ${thought.text}`);
   return item;
 };
 
@@ -185,6 +510,7 @@ const updateThoughtInteractivity = () => {
 const syncThoughtElement = (item: HTMLElement, thought: PensieveThought) => {
   item.classList.toggle('is-surfacing', thought.id === surfacingThoughtId);
   item.textContent = thought.text;
+  item.setAttribute('aria-label', `${t('modal.label')}: ${thought.text}`);
   item.style.setProperty('--thought-x', `${thought.x}%`);
   item.style.setProperty('--thought-y', `${thought.y}%`);
   item.style.setProperty('--thought-scale', String(thought.scale));
@@ -364,8 +690,8 @@ const addThoughtToPensieve = (text: string) => {
       duration: 8.8 + (thoughtId % 5) * 1.1,
       depth: 0.42 + (thoughtId % 4) * 0.16,
       orbitAngle: (thoughtId * 47) % 360,
-      orbitRadiusX: 74 + (thoughtId % 4) * 28,
-      orbitRadiusY: 28 + (thoughtId % 5) * 9,
+      orbitRadiusX: 152 + (thoughtId % 5) * 34,
+      orbitRadiusY: 42 + (thoughtId % 5) * 12,
       orbitDuration: 14 + (thoughtId % 5) * 1.8,
     },
   ];
@@ -416,8 +742,8 @@ const loadSavedThoughts = () => {
             duration: 8.8 + (thoughtId % 5) * 1.1,
             depth: 0.42 + (thoughtId % 4) * 0.16,
             orbitAngle: (thoughtId * 47) % 360,
-            orbitRadiusX: 74 + (thoughtId % 4) * 28,
-            orbitRadiusY: 28 + (thoughtId % 5) * 9,
+            orbitRadiusX: 152 + (thoughtId % 5) * 34,
+            orbitRadiusY: 42 + (thoughtId % 5) * 12,
             orbitDuration: 14 + (thoughtId % 5) * 1.8,
           },
         ];
@@ -467,7 +793,7 @@ const closeCaptureScreen = () => {
   }
 
   if (thoughtCloudText) {
-    thoughtCloudText.textContent = 'Нужно позвонить маме';
+    thoughtCloudText.textContent = t('thought.preview');
   }
 };
 
@@ -477,7 +803,7 @@ const syncThoughtPreview = () => {
   stage?.classList.toggle('has-draft-thought', thought.length > 0);
 
   if (thoughtCloudText) {
-    thoughtCloudText.textContent = thought || 'Нужно позвонить маме';
+    thoughtCloudText.textContent = thought || t('thought.preview');
   }
 };
 
@@ -501,7 +827,7 @@ const finishRelease = () => {
   }
 
   if (thoughtCloudText) {
-    thoughtCloudText.textContent = 'Нужно позвонить маме';
+    thoughtCloudText.textContent = t('thought.preview');
   }
 
   window.setTimeout(() => stage?.classList.remove('just-released'), 780);
@@ -661,11 +987,35 @@ infoCloseButton?.addEventListener('click', closeInfoDialog);
 tuneButton?.addEventListener('click', toggleWallpaperMenu);
 wallpaperOptions.forEach((option) => {
   option.addEventListener('click', () => {
-    const wallpaper = option.dataset.wallpaperOption;
+    const wallpaperName = option.dataset.wallpaperOption ?? null;
 
-    if (isWallpaperName(wallpaper ?? null)) {
-      applyWallpaper(wallpaper);
+    if (isWallpaperName(wallpaperName)) {
+      if (wallpaperName === 'custom' && !loadCustomWallpaperImage()) {
+        wallpaperUploadInput?.click();
+        return;
+      }
+
+      applyWallpaper(wallpaperName);
       closeWallpaperMenu();
+    }
+  });
+});
+wallpaperUploadInput?.addEventListener('change', () => {
+  const file = wallpaperUploadInput.files?.[0];
+
+  if (file) {
+    void saveCustomWallpaper(file);
+  }
+
+  wallpaperUploadInput.value = '';
+});
+languageOptions.forEach((option) => {
+  option.addEventListener('click', () => {
+    const language = option.dataset.languageOption ?? null;
+
+    if (isLanguageName(language)) {
+      saveLanguage(language);
+      renderPensieveThoughts();
     }
   });
 });
@@ -777,5 +1127,6 @@ thoughtModal?.setAttribute('aria-hidden', 'true');
 wallpaperMenu?.setAttribute('aria-hidden', 'true');
 infoDialog?.setAttribute('aria-hidden', 'true');
 infoButton?.setAttribute('aria-expanded', 'false');
+loadLanguage();
 loadWallpaper();
 loadSavedThoughts();
