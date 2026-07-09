@@ -3,8 +3,14 @@ import './styles.css';
 const stage = document.querySelector<HTMLElement>('.app-stage');
 const wandButton = document.querySelector<HTMLButtonElement>('.wand-button');
 const backButton = document.querySelector<HTMLButtonElement>('.back-button');
+const letGoButton = document.querySelector<HTMLButtonElement>('.let-go-button');
+const mixButton = document.querySelector<HTMLButtonElement>('.mix-button');
+const mixCloseButton = document.querySelector<HTMLButtonElement>('.mix-close-button');
 const thoughtForm = document.querySelector<HTMLFormElement>('.thought-form');
 const thoughtInput = document.querySelector<HTMLInputElement>('.thought-input');
+const thoughtModal = document.querySelector<HTMLElement>('.thought-modal');
+const thoughtModalText = document.querySelector<HTMLElement>('.thought-modal-text');
+const thoughtModalClose = document.querySelector<HTMLButtonElement>('.thought-modal-close');
 const thoughtCloudText = document.querySelector<HTMLElement>('.thought-cloud-text');
 const thoughtCloud = document.querySelector<HTMLElement>('.thought-cloud');
 const thoughtStream = document.querySelector<HTMLElement>('.thought-stream');
@@ -16,6 +22,7 @@ const captureScreen = document.querySelector<HTMLElement>('[data-screen="capture
 const pensieveScene = document.querySelector<HTMLElement>('.pensieve-scene');
 const stirZone = document.querySelector<HTMLElement>('.stir-zone');
 const releaseDurationMs = 3000;
+const clearThoughtsDurationMs = 1980;
 const storageKey = 'pensieve.thoughts.v1';
 
 type PensieveThought = {
@@ -27,6 +34,10 @@ type PensieveThought = {
   delay: number;
   duration: number;
   depth: number;
+  orbitAngle: number;
+  orbitRadiusX: number;
+  orbitRadiusY: number;
+  orbitDuration: number;
 };
 
 let releaseTimer = 0;
@@ -37,6 +48,7 @@ let stirTimer = 0;
 let surfacingThoughtId: number | null = null;
 let surfacingTimer = 0;
 let releaseFrame = 0;
+let clearTimer = 0;
 
 const thoughtPositions = [
   { x: 50, y: 50 },
@@ -50,31 +62,88 @@ const thoughtPositions = [
   { x: 31, y: 72 },
 ];
 
+const updateLetGoButton = () => {
+  const isBusy =
+    stage?.classList.contains('is-releasing') ||
+    stage?.classList.contains('is-clearing-thoughts') ||
+    stage?.classList.contains('is-mixing');
+
+  if (letGoButton) {
+    letGoButton.hidden = thoughts.length === 0;
+    letGoButton.disabled = thoughts.length === 0 || Boolean(isBusy);
+  }
+
+  if (mixButton) {
+    mixButton.hidden = thoughts.length === 0;
+    mixButton.disabled = thoughts.length === 0 || Boolean(isBusy);
+  }
+};
+
+const createThoughtElement = (thought: PensieveThought) => {
+  const item = document.createElement('button');
+  item.className = 'pensieve-thought';
+  item.type = 'button';
+  item.tabIndex = -1;
+  item.dataset.thoughtId = String(thought.id);
+  item.setAttribute('aria-label', `Показать мысль: ${thought.text}`);
+  return item;
+};
+
+const updateThoughtInteractivity = () => {
+  const isMixing = Boolean(stage?.classList.contains('is-mixing'));
+  pensieveThoughts?.querySelectorAll<HTMLButtonElement>('.pensieve-thought').forEach((item) => {
+    item.tabIndex = isMixing ? 0 : -1;
+  });
+};
+
+const syncThoughtElement = (item: HTMLElement, thought: PensieveThought) => {
+  item.classList.toggle('is-surfacing', thought.id === surfacingThoughtId);
+  item.textContent = thought.text;
+  item.style.setProperty('--thought-x', `${thought.x}%`);
+  item.style.setProperty('--thought-y', `${thought.y}%`);
+  item.style.setProperty('--thought-scale', String(thought.scale));
+  item.style.setProperty('--thought-delay', `${thought.delay}s`);
+  item.style.setProperty('--thought-duration', `${thought.duration}s`);
+  item.style.setProperty('--thought-depth', String(thought.depth));
+  item.style.setProperty('--orbit-angle', `${thought.orbitAngle}deg`);
+  item.style.setProperty('--orbit-angle-end', `${thought.orbitAngle + 360}deg`);
+  item.style.setProperty('--orbit-angle-inverse', `${-thought.orbitAngle}deg`);
+  item.style.setProperty('--orbit-angle-end-inverse', `${-(thought.orbitAngle + 360)}deg`);
+  item.style.setProperty('--orbit-radius-x', `${thought.orbitRadiusX}px`);
+  item.style.setProperty('--orbit-radius-y', `${thought.orbitRadiusY}px`);
+  item.style.setProperty('--orbit-duration', `${thought.orbitDuration}s`);
+};
+
 const renderPensieveThoughts = () => {
   if (!pensieveThoughts) {
     return;
   }
 
-  pensieveThoughts.replaceChildren(
-    ...thoughts.map((thought) => {
-      const item = document.createElement('span');
-      item.className = 'pensieve-thought';
-      if (thought.id === surfacingThoughtId) {
-        item.classList.add('is-surfacing');
-      }
-      item.textContent = thought.text;
-      item.style.setProperty('--thought-x', `${thought.x}%`);
-      item.style.setProperty('--thought-y', `${thought.y}%`);
-      item.style.setProperty('--thought-scale', String(thought.scale));
-      item.style.setProperty('--thought-delay', `${thought.delay}s`);
-      item.style.setProperty('--thought-duration', `${thought.duration}s`);
-      item.style.setProperty('--thought-depth', String(thought.depth));
-      return item;
-    }),
+  const currentItems = new Map(
+    Array.from(pensieveThoughts.querySelectorAll<HTMLElement>('.pensieve-thought')).map((item) => [
+      item.dataset.thoughtId,
+      item,
+    ]),
   );
+
+  thoughts.forEach((thought) => {
+    const key = String(thought.id);
+    const item = currentItems.get(key) ?? createThoughtElement(thought);
+    syncThoughtElement(item, thought);
+
+    if (!item.isConnected) {
+      pensieveThoughts.append(item);
+    }
+
+    currentItems.delete(key);
+  });
+
+  currentItems.forEach((item) => item.remove());
 
   stage?.classList.toggle('has-pensieve-thoughts', thoughts.length > 0);
   stage?.classList.toggle('has-many-thoughts', thoughts.length > 5);
+  updateThoughtInteractivity();
+  updateLetGoButton();
 };
 
 const saveThoughts = () => {
@@ -85,8 +154,21 @@ const saveThoughts = () => {
   }
 };
 
+const clearSavedThoughts = () => {
+  try {
+    window.localStorage.removeItem(storageKey);
+  } catch {
+    // Storage is a convenience; the app should still work without it.
+  }
+};
+
 const setStirPosition = (event: PointerEvent) => {
-  if (!pensieveScene || !stirZone || stage?.classList.contains('is-releasing')) {
+  if (
+    !pensieveScene ||
+    !stirZone ||
+    stage?.classList.contains('is-releasing') ||
+    stage?.classList.contains('is-clearing-thoughts')
+  ) {
     return;
   }
 
@@ -226,6 +308,10 @@ const addThoughtToPensieve = (text: string) => {
       delay: -(thoughtId % 6) * 0.65,
       duration: 8.8 + (thoughtId % 5) * 1.1,
       depth: 0.42 + (thoughtId % 4) * 0.16,
+      orbitAngle: (thoughtId * 47) % 360,
+      orbitRadiusX: 74 + (thoughtId % 4) * 28,
+      orbitRadiusY: 28 + (thoughtId % 5) * 9,
+      orbitDuration: 14 + (thoughtId % 5) * 1.8,
     },
   ];
 
@@ -274,6 +360,10 @@ const loadSavedThoughts = () => {
             delay: -(thoughtId % 6) * 0.65,
             duration: 8.8 + (thoughtId % 5) * 1.1,
             depth: 0.42 + (thoughtId % 4) * 0.16,
+            orbitAngle: (thoughtId * 47) % 360,
+            orbitRadiusX: 74 + (thoughtId % 4) * 28,
+            orbitRadiusY: 28 + (thoughtId % 5) * 9,
+            orbitDuration: 14 + (thoughtId % 5) * 1.8,
           },
         ];
         thoughtId += 1;
@@ -294,10 +384,24 @@ const openCaptureScreen = () => {
 
 const closeCaptureScreen = () => {
   window.clearTimeout(releaseTimer);
+  window.clearTimeout(clearTimer);
   window.cancelAnimationFrame(releaseFrame);
   resetReleaseStyles();
-  stage?.classList.remove('is-capturing', 'has-draft-thought', 'is-releasing', 'just-released');
+  stage?.classList.remove(
+    'is-capturing',
+    'has-draft-thought',
+    'is-releasing',
+    'just-released',
+    'just-cleared',
+    'is-clearing-thoughts',
+    'is-mixing',
+    'has-open-thought',
+  );
   captureScreen?.setAttribute('aria-hidden', 'true');
+  pensieveScene?.setAttribute('aria-hidden', 'true');
+  thoughtModal?.setAttribute('aria-hidden', 'true');
+  updateThoughtInteractivity();
+  updateLetGoButton();
 
   if (thoughtInput) {
     thoughtInput.value = '';
@@ -330,6 +434,7 @@ const finishRelease = () => {
   stage?.classList.remove('is-releasing', 'has-draft-thought');
   stage?.classList.add('just-released');
   resetReleaseStyles();
+  updateLetGoButton();
 
   if (thoughtInput) {
     thoughtInput.value = '';
@@ -344,9 +449,108 @@ const finishRelease = () => {
   window.setTimeout(() => stage?.classList.remove('just-released'), 780);
 };
 
+const clearPensieveThoughts = () => {
+  if (
+    thoughts.length === 0 ||
+    stage?.classList.contains('is-releasing') ||
+    stage?.classList.contains('is-clearing-thoughts') ||
+    stage?.classList.contains('is-mixing')
+  ) {
+    return;
+  }
+
+  window.clearTimeout(clearTimer);
+  window.clearTimeout(surfacingTimer);
+  surfacingThoughtId = null;
+  stage?.classList.remove('just-released', 'is-stirring');
+  stage?.classList.add('is-clearing-thoughts');
+  updateLetGoButton();
+
+  clearTimer = window.setTimeout(() => {
+    thoughts = [];
+    clearSavedThoughts();
+    renderPensieveThoughts();
+    stage?.classList.remove('is-clearing-thoughts');
+    stage?.classList.add('just-cleared');
+    updateLetGoButton();
+
+    window.setTimeout(() => stage?.classList.remove('just-cleared'), 920);
+  }, clearThoughtsDurationMs);
+};
+
+const openMixingView = () => {
+  if (
+    thoughts.length === 0 ||
+    stage?.classList.contains('is-releasing') ||
+    stage?.classList.contains('is-clearing-thoughts')
+  ) {
+    return;
+  }
+
+  stage?.classList.remove('has-draft-thought', 'just-released', 'just-cleared', 'is-stirring');
+  stage?.classList.add('is-mixing');
+  pensieveScene?.removeAttribute('aria-hidden');
+  updateThoughtInteractivity();
+  updateLetGoButton();
+
+  if (thoughtInput) {
+    thoughtInput.blur();
+  }
+};
+
+const closeThoughtModal = () => {
+  stage?.classList.remove('has-open-thought');
+  thoughtModal?.setAttribute('aria-hidden', 'true');
+
+  if (thoughtModalText) {
+    thoughtModalText.textContent = '';
+  }
+};
+
+const closeMixingView = () => {
+  closeThoughtModal();
+  stage?.classList.remove('is-mixing');
+  pensieveScene?.setAttribute('aria-hidden', 'true');
+  updateThoughtInteractivity();
+  updateLetGoButton();
+  window.setTimeout(() => thoughtInput?.focus(), 180);
+};
+
+const openThoughtModal = (thought: PensieveThought) => {
+  if (!thoughtModal || !thoughtModalText) {
+    return;
+  }
+
+  thoughtModalText.textContent = thought.text;
+  thoughtModal.removeAttribute('aria-hidden');
+  stage?.classList.add('has-open-thought');
+  window.setTimeout(() => thoughtModalClose?.focus(), 120);
+};
+
 wandButton?.addEventListener('click', openCaptureScreen);
 backButton?.addEventListener('click', closeCaptureScreen);
+letGoButton?.addEventListener('click', clearPensieveThoughts);
+mixButton?.addEventListener('click', openMixingView);
+mixCloseButton?.addEventListener('click', closeMixingView);
+thoughtModalClose?.addEventListener('click', closeThoughtModal);
+thoughtModal?.addEventListener('click', (event) => {
+  if (event.target === thoughtModal) {
+    closeThoughtModal();
+  }
+});
 thoughtInput?.addEventListener('input', syncThoughtPreview);
+pensieveThoughts?.addEventListener('click', (event) => {
+  if (!stage?.classList.contains('is-mixing')) {
+    return;
+  }
+
+  const thoughtElement = (event.target as HTMLElement).closest<HTMLElement>('.pensieve-thought');
+  const thought = thoughts.find((item) => String(item.id) === thoughtElement?.dataset.thoughtId);
+
+  if (thought) {
+    openThoughtModal(thought);
+  }
+});
 stirZone?.addEventListener('pointerdown', (event) => {
   stirZone.setPointerCapture(event.pointerId);
   setStirPosition(event);
@@ -365,7 +569,11 @@ thoughtForm?.addEventListener('submit', (event) => {
     return;
   }
 
-  if (stage?.classList.contains('is-releasing')) {
+  if (
+    stage?.classList.contains('is-releasing') ||
+    stage?.classList.contains('is-clearing-thoughts') ||
+    stage?.classList.contains('is-mixing')
+  ) {
     return;
   }
 
@@ -378,6 +586,18 @@ thoughtForm?.addEventListener('submit', (event) => {
   animateRelease();
 });
 
-stage?.classList.remove('is-capturing', 'has-draft-thought', 'is-releasing', 'just-released', 'is-stirring');
+stage?.classList.remove(
+  'is-capturing',
+  'has-draft-thought',
+  'is-releasing',
+  'just-released',
+  'just-cleared',
+  'is-stirring',
+  'is-clearing-thoughts',
+  'is-mixing',
+  'has-open-thought',
+);
 captureScreen?.setAttribute('aria-hidden', 'true');
+pensieveScene?.setAttribute('aria-hidden', 'true');
+thoughtModal?.setAttribute('aria-hidden', 'true');
 loadSavedThoughts();

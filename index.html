@@ -49,6 +49,18 @@
             </button>
           </form>
 
+          <button class="let-go-button" type="button" hidden>
+            Отпустить мысли
+          </button>
+
+          <button class="mix-button" type="button" hidden>
+            Перемешать
+          </button>
+
+          <button class="mix-close-button" type="button" aria-label="Закрыть омут">
+            ×
+          </button>
+
           <div class="wand-hand" aria-hidden="true">
             <img class="hand-asset" src="/src/assets/hand-wand.png" alt="" />
             <span class="wand-light"></span>
@@ -77,6 +89,13 @@
           </div>
           <div class="bowl-front"></div>
           <div class="stir-zone" aria-hidden="true"></div>
+        </div>
+
+        <div class="thought-modal" role="dialog" aria-modal="true" aria-hidden="true">
+          <button class="thought-modal-close" type="button" aria-label="Закрыть мысль">
+            ×
+          </button>
+          <p class="thought-modal-text"></p>
         </div>
 
         <div class="primary-action">

@@ -285,6 +285,10 @@ button {
     0 0 46px rgba(93, 191, 255, 0.26);
 }
 
+.is-clearing-thoughts .pensieve-scene {
+  filter: saturate(1.24) brightness(1.12);
+}
+
 .pensieve-thoughts {
   position: absolute;
   inset: 0;
@@ -305,6 +309,12 @@ button {
   --thought-delay: 0s;
   --thought-duration: 10s;
   --thought-depth: 0.6;
+  --orbit-angle: 0deg;
+  --orbit-angle-end: 360deg;
+  --orbit-angle-inverse: 0deg;
+  --orbit-angle-end-inverse: -360deg;
+  --orbit-radius-x: 120px;
+  --orbit-duration: 16s;
   position: absolute;
   left: var(--thought-x);
   top: var(--thought-y);
@@ -323,6 +333,7 @@ button {
     0 0 22px rgba(94, 191, 255, 0.2);
   color: rgba(242, 249, 255, calc(0.58 + var(--thought-depth) * 0.34));
   font-size: clamp(9px, 1.2vw, 12px);
+  font-family: inherit;
   line-height: 1.16;
   text-align: center;
   overflow-wrap: anywhere;
@@ -337,6 +348,8 @@ button {
   transition:
     opacity 360ms ease,
     filter 360ms ease;
+  cursor: default;
+  pointer-events: none;
 }
 
 .is-stirring .pensieve-thought {
@@ -486,6 +499,14 @@ button {
   animation: waterReceive 1040ms cubic-bezier(0.16, 0.8, 0.24, 1) 1660ms both;
 }
 
+.is-clearing-thoughts .water-surface::before {
+  animation-duration: 6.8s;
+}
+
+.is-clearing-thoughts .water-surface::after {
+  animation: waterReleaseAll 1900ms cubic-bezier(0.16, 0.86, 0.22, 1) both;
+}
+
 .ripple {
   position: absolute;
   z-index: 4;
@@ -537,6 +558,10 @@ button {
   animation: releaseSplash 1120ms cubic-bezier(0.16, 0.8, 0.24, 1) 1620ms both;
 }
 
+.is-clearing-thoughts .release-splash {
+  animation: releaseAllSplash 1900ms cubic-bezier(0.16, 0.86, 0.22, 1) both;
+}
+
 .dot-one {
   top: 38%;
   left: 24%;
@@ -585,6 +610,74 @@ button {
 
 .is-stirring .stir-zone {
   cursor: none;
+}
+
+.is-mixing .stir-zone {
+  pointer-events: none;
+}
+
+.is-mixing .pensieve-scene {
+  bottom: 50%;
+  width: min(860px, 116vw);
+  z-index: 21;
+  filter: saturate(1.22) brightness(1.1);
+  transform: translate(-50%, 50%);
+}
+
+.is-mixing .water-surface {
+  box-shadow:
+    inset 0 3px 30px rgba(198, 241, 255, 0.22),
+    inset 0 -14px 34px rgba(0, 0, 0, 0.78),
+    0 0 70px rgba(93, 191, 255, 0.22);
+}
+
+.is-mixing .water-surface::before {
+  animation-duration: 5.8s;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(190, 238, 255, 0.12), transparent 32%),
+    conic-gradient(
+      from 40deg,
+      transparent,
+      rgba(167, 230, 255, 0.2),
+      transparent,
+      rgba(95, 172, 226, 0.2),
+      transparent
+    );
+}
+
+.is-mixing .pensieve-thoughts {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.is-mixing .pensieve-thought {
+  left: 50%;
+  top: 50%;
+  width: clamp(96px, 15vw, 142px);
+  min-height: 62px;
+  color: rgba(244, 250, 255, 0.94);
+  font-size: clamp(11px, 1.8vw, 15px);
+  opacity: 0.9;
+  filter: blur(0) brightness(1.08);
+  cursor: pointer;
+  pointer-events: auto;
+  animation:
+    thoughtOrbit var(--orbit-duration) linear infinite,
+    thoughtMixGlow 4.8s ease-in-out var(--thought-delay) infinite alternate !important;
+}
+
+.is-mixing .pensieve-thought:hover,
+.is-mixing .pensieve-thought:focus-visible {
+  outline: 1px solid rgba(210, 246, 255, 0.82);
+  outline-offset: 5px;
+  filter: blur(0) brightness(1.28);
+  animation-play-state: paused;
+}
+
+.is-mixing .pensieve-thought.is-surfacing {
+  animation:
+    thoughtOrbit var(--orbit-duration) linear infinite,
+    thoughtMixGlow 4.8s ease-in-out var(--thought-delay) infinite alternate !important;
 }
 
 .primary-action {
@@ -704,9 +797,142 @@ button {
 }
 
 .back-button:focus-visible,
+.let-go-button:focus-visible,
+.mix-button:focus-visible,
+.mix-close-button:focus-visible,
+.thought-modal-close:focus-visible,
 .thought-submit:focus-visible {
   outline: 1px solid rgba(181, 239, 255, 0.95);
   outline-offset: 4px;
+}
+
+.let-go-button,
+.mix-button {
+  position: absolute;
+  top: clamp(86px, 12vh, 126px);
+  left: 50%;
+  z-index: 12;
+  min-width: 132px;
+  min-height: 34px;
+  padding: 8px 16px;
+  border: 1px solid rgba(169, 224, 255, 0.3);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(169, 224, 255, 0.12), transparent 56%),
+    rgba(3, 13, 22, 0.42);
+  color: rgba(228, 240, 250, 0.76);
+  box-shadow:
+    inset 0 0 18px rgba(101, 197, 255, 0.08),
+    0 0 20px rgba(88, 187, 255, 0.08);
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0.78;
+  transform: translateX(-50%);
+  transition:
+    opacity 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  pointer-events: auto;
+}
+
+.let-go-button {
+  transform: translateX(calc(-100% - 8px));
+}
+
+.mix-button {
+  transform: translateX(8px);
+}
+
+.let-go-button[hidden],
+.mix-button[hidden] {
+  display: none;
+}
+
+.let-go-button:hover,
+.let-go-button:focus-visible,
+.mix-button:hover,
+.mix-button:focus-visible {
+  border-color: rgba(197, 240, 255, 0.76);
+  color: rgba(242, 249, 255, 0.92);
+  opacity: 1;
+  box-shadow:
+    inset 0 0 20px rgba(121, 210, 255, 0.12),
+    0 0 28px rgba(88, 187, 255, 0.16);
+}
+
+.let-go-button:disabled {
+  cursor: default;
+  opacity: 0.44;
+}
+
+.let-go-button:hover,
+.let-go-button:focus-visible {
+  transform: translateX(calc(-100% - 8px)) translateY(-1px);
+}
+
+.mix-button:hover,
+.mix-button:focus-visible {
+  transform: translateX(8px) translateY(-1px);
+}
+
+.mix-button:disabled {
+  cursor: default;
+  opacity: 0.44;
+}
+
+.mix-close-button,
+.thought-modal-close {
+  position: absolute;
+  z-index: 42;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(190, 232, 255, 0.26);
+  border-radius: 999px;
+  background: rgba(3, 12, 20, 0.42);
+  color: rgba(235, 247, 255, 0.86);
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow:
+    inset 0 0 18px rgba(116, 207, 255, 0.08),
+    0 0 22px rgba(77, 172, 236, 0.1);
+  transition:
+    opacity 220ms ease,
+    transform 260ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    border-color 220ms ease;
+}
+
+.mix-close-button {
+  top: clamp(22px, 4vh, 42px);
+  right: clamp(22px, 5vw, 56px);
+  opacity: 0;
+  transform: translateY(-8px) scale(0.94);
+  pointer-events: none;
+}
+
+.is-mixing .mix-close-button {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.mix-close-button:hover,
+.thought-modal-close:hover {
+  border-color: rgba(218, 249, 255, 0.72);
+  transform: translateY(-1px) scale(1.02);
+}
+
+.thought-modal-close {
+  top: 18px;
+  right: 18px;
+  width: 34px;
+  height: 34px;
+  font-size: 22px;
 }
 
 .thought-form {
@@ -760,8 +986,28 @@ button {
 
 .is-releasing .thought-input,
 .is-releasing .thought-submit,
-.is-releasing .back-button {
+.is-releasing .back-button,
+.is-clearing-thoughts .thought-input,
+.is-clearing-thoughts .thought-submit,
+.is-clearing-thoughts .back-button,
+.is-clearing-thoughts .let-go-button,
+.is-clearing-thoughts .mix-button {
   pointer-events: none;
+}
+
+.is-mixing .thought-form,
+.is-mixing .let-go-button,
+.is-mixing .mix-button,
+.is-mixing .back-button,
+.is-mixing .wand-hand,
+.is-mixing .thought-stream,
+.is-mixing .thought-cloud,
+.is-mixing .release-trail {
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 260ms ease,
+    transform 420ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .is-releasing .thought-form {
@@ -1022,8 +1268,91 @@ button {
   animation: none;
 }
 
+.thought-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 38;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  opacity: 0;
+  visibility: hidden;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(97, 183, 238, 0.12), transparent 34%),
+    rgba(0, 5, 9, 0.34);
+  backdrop-filter: blur(5px);
+  transition:
+    opacity 320ms ease,
+    visibility 0ms linear 320ms;
+  pointer-events: none;
+}
+
+.thought-modal::before {
+  content: "";
+  position: absolute;
+  width: min(420px, 76vw);
+  aspect-ratio: 1.35;
+  border-radius: 48% 52% 44% 56% / 55% 44% 56% 45%;
+  background:
+    radial-gradient(circle at 38% 28%, rgba(238, 252, 255, 0.34), transparent 20%),
+    radial-gradient(circle at 50% 52%, rgba(98, 173, 226, 0.34), rgba(31, 73, 108, 0.24) 64%, rgba(8, 24, 39, 0.16));
+  border: 1px solid rgba(186, 232, 255, 0.28);
+  box-shadow:
+    inset 0 0 34px rgba(213, 243, 255, 0.16),
+    0 0 70px rgba(101, 198, 255, 0.24);
+  filter: blur(0.1px);
+  animation: modalMist 5.2s ease-in-out infinite alternate;
+}
+
+.thought-modal[aria-hidden="true"] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.has-open-thought .thought-modal:not([aria-hidden="true"]) {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 320ms ease,
+    visibility 0ms linear 0ms;
+  pointer-events: auto;
+}
+
+.thought-modal-text {
+  position: relative;
+  z-index: 1;
+  width: min(320px, 64vw);
+  margin: 0;
+  color: rgba(244, 250, 255, 0.94);
+  font-size: clamp(20px, 5vw, 32px);
+  line-height: 1.24;
+  text-align: center;
+  text-shadow:
+    0 0 18px rgba(107, 207, 255, 0.32),
+    0 2px 18px rgba(0, 0, 0, 0.58);
+  overflow-wrap: anywhere;
+}
+
 .just-released .water-surface {
   animation: bowlAfterglow 780ms ease-out both;
+}
+
+.is-clearing-thoughts .pensieve-thought {
+  animation: thoughtLetGo 1900ms cubic-bezier(0.16, 0.86, 0.22, 1) both !important;
+}
+
+.is-clearing-thoughts .pensieve-thought::before,
+.is-clearing-thoughts .pensieve-thought::after {
+  animation: thoughtLetGoBubble 1780ms cubic-bezier(0.16, 0.86, 0.22, 1) both;
+}
+
+.is-clearing-thoughts .stir-zone {
+  pointer-events: none;
+}
+
+.just-cleared .water-surface {
+  animation: bowlAfterglow 920ms ease-out both;
 }
 
 @keyframes slowSwirl {
@@ -1079,6 +1408,48 @@ button {
 
   66% {
     translate: -2px 7px;
+  }
+}
+
+@keyframes thoughtOrbit {
+  from {
+    transform:
+      rotate(var(--orbit-angle))
+      translate3d(var(--orbit-radius-x), 0, 0)
+      rotate(var(--orbit-angle-inverse))
+      scale(calc(var(--thought-scale) * 1.02));
+  }
+
+  to {
+    transform:
+      rotate(var(--orbit-angle-end))
+      translate3d(var(--orbit-radius-x), 0, 0)
+      rotate(var(--orbit-angle-end-inverse))
+      scale(calc(var(--thought-scale) * 1.02));
+  }
+}
+
+@keyframes thoughtMixGlow {
+  from {
+    opacity: 0.68;
+    filter: blur(0.3px) brightness(1);
+  }
+
+  to {
+    opacity: 0.96;
+    filter: blur(0) brightness(1.22);
+  }
+}
+
+@keyframes modalMist {
+  from {
+    transform: translate3d(-5px, 4px, 0) scale(0.98) rotate(-1.5deg);
+    opacity: 0.86;
+  }
+
+  to {
+    transform: translate3d(5px, -4px, 0) scale(1.03) rotate(1.5deg);
+    opacity: 1;
   }
 }
 
@@ -1194,6 +1565,35 @@ button {
       scale(calc(var(--thought-scale) * (0.76 + var(--thought-depth) * 0.28)));
     filter: blur(calc((1 - var(--thought-depth)) * 1.8px));
     clip-path: ellipse(78% 64% at 50% 50%);
+  }
+}
+
+@keyframes thoughtLetGo {
+  0% {
+    opacity: calc(0.28 + var(--thought-depth) * 0.56);
+    transform:
+      translate3d(-50%, -50%, 0)
+      scale(calc(var(--thought-scale) * (0.76 + var(--thought-depth) * 0.28)));
+    filter: blur(calc((1 - var(--thought-depth)) * 1.2px)) brightness(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform:
+      translate3d(calc(-50% + 18px), calc(-50% + 84px), 0)
+      scale(calc(var(--thought-scale) * 0.18));
+    filter: blur(9px) brightness(1.9);
+  }
+}
+
+@keyframes thoughtLetGoBubble {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(4px, 24px, 0) scale(0.22);
   }
 }
 
@@ -1337,6 +1737,18 @@ button {
   }
 }
 
+@keyframes waterReleaseAll {
+  0% {
+    opacity: 0.56;
+    transform: scale(0.42);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(2.28);
+  }
+}
+
 @keyframes releaseSplash {
   0% {
     opacity: 0;
@@ -1351,6 +1763,18 @@ button {
   100% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(5.8);
+  }
+}
+
+@keyframes releaseAllSplash {
+  0% {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(0.42);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(7.4);
   }
 }
 
