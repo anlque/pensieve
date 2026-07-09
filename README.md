@@ -6,11 +6,13 @@ A small calming web app for unloading thoughts into a visual "memory bowl". The 
 
 - Add a thought through a wand animation.
 - Watch thoughts float in the pensieve.
+- Drag a thought out of the bowl to release/delete it.
 - Release all thoughts with a soft reset animation.
 - Open a close-up mixing mode where thoughts orbit around the bowl.
 - Click a thought in mixing mode to view, edit, or delete it.
 - Change the wallpaper from the settings icon.
 - Upload a custom wallpaper image; the app compresses it locally before saving.
+- Switch between Russian and English.
 - Open the info dialog for a short in-app guide.
 
 ## Getting Started
@@ -46,6 +48,7 @@ The app uses these keys:
 - `pensieve.thoughts.v1` stores thought text.
 - `pensieve.wallpaper.v1` stores the active wallpaper key.
 - `pensieve.customWallpaper.v1` stores the compressed custom wallpaper data URL.
+- `pensieve.language.v1` stores the selected language.
 
 Clearing browser site data resets the app.
 

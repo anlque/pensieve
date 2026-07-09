@@ -592,12 +592,12 @@ const isPointOutsidePensieve = (x: number, y: number) => {
     return false;
   }
 
-  const releasePadding = 14;
+  const releaseInset = 18;
   return (
-    x < rect.left - releasePadding ||
-    x > rect.right + releasePadding ||
-    y < rect.top - releasePadding ||
-    y > rect.bottom + releasePadding
+    x < rect.left + releaseInset ||
+    x > rect.right - releaseInset ||
+    y < rect.top + releaseInset ||
+    y > rect.bottom - releaseInset
   );
 };
 
