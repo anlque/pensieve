@@ -9,7 +9,13 @@
   <body>
     <main id="app" class="app-shell">
       <section class="app-stage" aria-labelledby="app-title">
-        <button class="icon-button info-button" type="button" aria-label="Информация">
+        <button
+          class="icon-button info-button"
+          type="button"
+          aria-label="Информация"
+          aria-expanded="false"
+          aria-controls="info-dialog"
+        >
           i
         </button>
 
@@ -43,6 +49,22 @@
             <span class="wallpaper-swatch wallpaper-swatch-embers"></span>
             <span>Искры</span>
           </button>
+        </div>
+
+        <div id="info-dialog" class="info-dialog" role="dialog" aria-modal="true" aria-hidden="true">
+          <button class="info-close-button" type="button" aria-label="Закрыть информацию">
+            ×
+          </button>
+          <div class="info-dialog-content">
+            <h2>Омут памяти</h2>
+            <p>Место, куда можно выгрузить мысли, чтобы стало легче.</p>
+            <ul>
+              <li>Введи мысль и отпусти её в омут палочкой.</li>
+              <li>Перемешай омут, чтобы рассмотреть мысли ближе.</li>
+              <li>Открой мысль, измени её или удали.</li>
+              <li>Смени обои через настройки справа.</li>
+            </ul>
+          </div>
         </div>
 
         <div class="forest-depth" aria-hidden="true"></div>
@@ -121,7 +143,27 @@
           <button class="thought-modal-close" type="button" aria-label="Закрыть мысль">
             ×
           </button>
-          <p class="thought-modal-text"></p>
+          <div class="thought-modal-view">
+            <p class="thought-modal-text"></p>
+            <div class="thought-modal-actions" aria-label="Действия с мыслью">
+              <button class="thought-edit-button" type="button">Изменить</button>
+              <button class="thought-delete-button" type="button">Удалить</button>
+            </div>
+          </div>
+          <form class="thought-edit-form" autocomplete="off">
+            <label class="sr-only" for="thought-edit-input">Редактировать мысль</label>
+            <input
+              id="thought-edit-input"
+              class="thought-edit-input"
+              name="thought-edit"
+              type="text"
+              maxlength="80"
+            />
+            <div class="thought-modal-actions">
+              <button class="thought-save-button" type="submit">Сохранить</button>
+              <button class="thought-cancel-button" type="button">Отмена</button>
+            </div>
+          </form>
         </div>
 
         <div class="primary-action">

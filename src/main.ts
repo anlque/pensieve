@@ -6,6 +6,9 @@ const backButton = document.querySelector<HTMLButtonElement>('.back-button');
 const letGoButton = document.querySelector<HTMLButtonElement>('.let-go-button');
 const mixButton = document.querySelector<HTMLButtonElement>('.mix-button');
 const mixCloseButton = document.querySelector<HTMLButtonElement>('.mix-close-button');
+const infoButton = document.querySelector<HTMLButtonElement>('.info-button');
+const infoDialog = document.querySelector<HTMLElement>('.info-dialog');
+const infoCloseButton = document.querySelector<HTMLButtonElement>('.info-close-button');
 const tuneButton = document.querySelector<HTMLButtonElement>('.tune-button');
 const wallpaperMenu = document.querySelector<HTMLElement>('.wallpaper-menu');
 const wallpaperOptions = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-wallpaper-option]'));
@@ -14,6 +17,12 @@ const thoughtInput = document.querySelector<HTMLInputElement>('.thought-input');
 const thoughtModal = document.querySelector<HTMLElement>('.thought-modal');
 const thoughtModalText = document.querySelector<HTMLElement>('.thought-modal-text');
 const thoughtModalClose = document.querySelector<HTMLButtonElement>('.thought-modal-close');
+const thoughtModalView = document.querySelector<HTMLElement>('.thought-modal-view');
+const thoughtEditForm = document.querySelector<HTMLFormElement>('.thought-edit-form');
+const thoughtEditInput = document.querySelector<HTMLInputElement>('.thought-edit-input');
+const thoughtEditButton = document.querySelector<HTMLButtonElement>('.thought-edit-button');
+const thoughtDeleteButton = document.querySelector<HTMLButtonElement>('.thought-delete-button');
+const thoughtCancelButton = document.querySelector<HTMLButtonElement>('.thought-cancel-button');
 const thoughtCloudText = document.querySelector<HTMLElement>('.thought-cloud-text');
 const thoughtCloud = document.querySelector<HTMLElement>('.thought-cloud');
 const thoughtStream = document.querySelector<HTMLElement>('.thought-stream');
@@ -54,6 +63,7 @@ let surfacingThoughtId: number | null = null;
 let surfacingTimer = 0;
 let releaseFrame = 0;
 let clearTimer = 0;
+let selectedThoughtId: number | null = null;
 
 const thoughtPositions = [
   { x: 50, y: 50 },
@@ -74,6 +84,21 @@ const closeWallpaperMenu = () => {
   stage?.classList.remove('has-open-wallpaper-menu');
   wallpaperMenu?.setAttribute('aria-hidden', 'true');
   tuneButton?.setAttribute('aria-expanded', 'false');
+};
+
+const closeInfoDialog = () => {
+  stage?.classList.remove('has-open-info');
+  infoDialog?.setAttribute('aria-hidden', 'true');
+  infoButton?.setAttribute('aria-expanded', 'false');
+};
+
+const openInfoDialog = () => {
+  closeWallpaperMenu();
+  closeThoughtModal();
+  stage?.classList.add('has-open-info');
+  infoDialog?.setAttribute('aria-hidden', 'false');
+  infoButton?.setAttribute('aria-expanded', 'true');
+  window.setTimeout(() => infoCloseButton?.focus(), 120);
 };
 
 const openWallpaperMenu = () => {
@@ -214,6 +239,8 @@ const saveThoughts = () => {
     // Storage is a convenience; the app should still work without it.
   }
 };
+
+const getSelectedThought = () => thoughts.find((thought) => thought.id === selectedThoughtId);
 
 const clearSavedThoughts = () => {
   try {
@@ -424,10 +451,13 @@ const closeCaptureScreen = () => {
     'is-clearing-thoughts',
     'is-mixing',
     'has-open-thought',
+    'has-open-info',
   );
   captureScreen?.setAttribute('aria-hidden', 'true');
   pensieveScene?.setAttribute('aria-hidden', 'true');
   thoughtModal?.setAttribute('aria-hidden', 'true');
+  infoDialog?.setAttribute('aria-hidden', 'true');
+  infoButton?.setAttribute('aria-expanded', 'false');
   updateThoughtInteractivity();
   updateLetGoButton();
 
@@ -529,10 +559,16 @@ const openMixingView = () => {
 
 const closeThoughtModal = () => {
   stage?.classList.remove('has-open-thought');
+  thoughtModal?.classList.remove('is-editing');
   thoughtModal?.setAttribute('aria-hidden', 'true');
+  selectedThoughtId = null;
 
   if (thoughtModalText) {
     thoughtModalText.textContent = '';
+  }
+
+  if (thoughtEditInput) {
+    thoughtEditInput.value = '';
   }
 };
 
@@ -550,10 +586,69 @@ const openThoughtModal = (thought: PensieveThought) => {
     return;
   }
 
+  selectedThoughtId = thought.id;
+  thoughtModal.classList.remove('is-editing');
   thoughtModalText.textContent = thought.text;
   thoughtModal.removeAttribute('aria-hidden');
   stage?.classList.add('has-open-thought');
-  window.setTimeout(() => thoughtModalClose?.focus(), 120);
+  window.setTimeout(() => thoughtEditButton?.focus(), 120);
+};
+
+const startEditingThought = () => {
+  const thought = getSelectedThought();
+
+  if (!thought || !thoughtModal || !thoughtEditInput) {
+    return;
+  }
+
+  thoughtEditInput.value = thought.text;
+  thoughtModal.classList.add('is-editing');
+  window.setTimeout(() => {
+    thoughtEditInput.focus();
+    thoughtEditInput.select();
+  }, 80);
+};
+
+const stopEditingThought = () => {
+  thoughtModal?.classList.remove('is-editing');
+  window.setTimeout(() => thoughtEditButton?.focus(), 80);
+};
+
+const saveEditedThought = () => {
+  const thought = getSelectedThought();
+  const nextText = thoughtEditInput?.value.trim() ?? '';
+
+  if (!thought || !nextText) {
+    thoughtEditInput?.focus();
+    return;
+  }
+
+  thoughts = thoughts.map((item) => (item.id === thought.id ? { ...item, text: nextText.slice(0, 80) } : item));
+  renderPensieveThoughts();
+  saveThoughts();
+
+  if (thoughtModalText) {
+    thoughtModalText.textContent = nextText.slice(0, 80);
+  }
+
+  stopEditingThought();
+};
+
+const deleteSelectedThought = () => {
+  const thought = getSelectedThought();
+
+  if (!thought) {
+    return;
+  }
+
+  thoughts = thoughts.filter((item) => item.id !== thought.id);
+  saveThoughts();
+  closeThoughtModal();
+  renderPensieveThoughts();
+
+  if (thoughts.length === 0) {
+    closeMixingView();
+  }
 };
 
 wandButton?.addEventListener('click', openCaptureScreen);
@@ -561,6 +656,8 @@ backButton?.addEventListener('click', closeCaptureScreen);
 letGoButton?.addEventListener('click', clearPensieveThoughts);
 mixButton?.addEventListener('click', openMixingView);
 mixCloseButton?.addEventListener('click', closeMixingView);
+infoButton?.addEventListener('click', openInfoDialog);
+infoCloseButton?.addEventListener('click', closeInfoDialog);
 tuneButton?.addEventListener('click', toggleWallpaperMenu);
 wallpaperOptions.forEach((option) => {
   option.addEventListener('click', () => {
@@ -585,13 +682,40 @@ document.addEventListener('click', (event) => {
 });
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
+    if (stage?.classList.contains('has-open-info')) {
+      closeInfoDialog();
+      return;
+    }
+
+    if (thoughtModal?.classList.contains('is-editing')) {
+      stopEditingThought();
+      return;
+    }
+
+    if (stage?.classList.contains('has-open-thought')) {
+      closeThoughtModal();
+      return;
+    }
+
     closeWallpaperMenu();
   }
 });
 thoughtModalClose?.addEventListener('click', closeThoughtModal);
+thoughtEditButton?.addEventListener('click', startEditingThought);
+thoughtCancelButton?.addEventListener('click', stopEditingThought);
+thoughtDeleteButton?.addEventListener('click', deleteSelectedThought);
+thoughtEditForm?.addEventListener('submit', (event) => {
+  event.preventDefault();
+  saveEditedThought();
+});
 thoughtModal?.addEventListener('click', (event) => {
   if (event.target === thoughtModal) {
     closeThoughtModal();
+  }
+});
+infoDialog?.addEventListener('click', (event) => {
+  if (event.target === infoDialog) {
+    closeInfoDialog();
   }
 });
 thoughtInput?.addEventListener('input', syncThoughtPreview);
@@ -645,10 +769,13 @@ stage?.classList.remove(
   'is-mixing',
   'has-open-thought',
   'has-open-wallpaper-menu',
+  'has-open-info',
 );
 captureScreen?.setAttribute('aria-hidden', 'true');
 pensieveScene?.setAttribute('aria-hidden', 'true');
 thoughtModal?.setAttribute('aria-hidden', 'true');
 wallpaperMenu?.setAttribute('aria-hidden', 'true');
+infoDialog?.setAttribute('aria-hidden', 'true');
+infoButton?.setAttribute('aria-expanded', 'false');
 loadWallpaper();
 loadSavedThoughts();
