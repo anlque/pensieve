@@ -759,8 +759,11 @@ button {
 }
 
 .is-releasing .thought-form {
-  opacity: 0.54;
-  transition: opacity 360ms ease;
+  opacity: 0.42;
+  transform: translateX(-50%) translateY(-8px);
+  transition:
+    opacity 420ms ease,
+    transform 520ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .thought-submit span {
@@ -773,7 +776,7 @@ button {
 
 .wand-hand {
   position: absolute;
-  top: clamp(74px, 13vh, 118px);
+  top: clamp(42px, 8vh, 84px);
   left: calc(50% + min(6px, 2vw));
   right: auto;
   z-index: 6;
@@ -784,7 +787,7 @@ button {
 }
 
 .is-releasing .wand-hand {
-  animation: wandRelease 2600ms cubic-bezier(0.28, 0.72, 0.24, 1) both;
+  animation: none;
 }
 
 .hand,
@@ -825,13 +828,13 @@ button {
 }
 
 .is-releasing .wand-light {
-  animation: releaseLight 2600ms cubic-bezier(0.28, 0.72, 0.24, 1) both;
+  animation: none;
 }
 
 .thought-cloud {
   position: absolute;
   left: calc(50% + var(--thought-anchor-x));
-  top: clamp(420px, 61vh, 500px);
+  top: clamp(356px, 54vh, 444px);
   z-index: 7;
   display: grid;
   place-items: center;
@@ -852,17 +855,18 @@ button {
   text-align: center;
   overflow-wrap: anywhere;
   opacity: 0;
-  transform: translateX(-50%) scale(0.92);
+  transform: translateX(-50%) scale(0.28);
   transition:
     opacity 320ms ease,
     transform 520ms cubic-bezier(0.2, 0.7, 0.2, 1),
     box-shadow 320ms ease;
-  animation: cloudFloat 4.4s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .is-releasing .thought-cloud {
-  animation: thoughtRelease 2600ms cubic-bezier(0.28, 0.72, 0.24, 1) both;
+  animation: none;
   pointer-events: none;
+  transition: none;
 }
 
 .thought-cloud::before,
@@ -888,9 +892,12 @@ button {
   height: 33px;
 }
 
-.has-draft-thought .thought-cloud {
-  opacity: 1;
-  transform: translateX(-50%) scale(1);
+.has-draft-thought:not(.is-releasing) .thought-cloud {
+  opacity: 0;
+  transform: translateX(-50%) scale(0.28);
+}
+
+.is-releasing .thought-cloud {
   box-shadow:
     inset 0 0 26px rgba(206, 238, 255, 0.2),
     0 0 36px rgba(102, 199, 255, 0.28);
@@ -898,29 +905,63 @@ button {
 
 .thought-stream {
   position: absolute;
-  left: calc(50% + var(--thought-stream-x));
-  top: clamp(332px, 51vh, 408px);
+  left: 50%;
+  top: clamp(72px, 11vh, 104px);
   z-index: 4;
-  width: 72px;
-  height: 170px;
+  width: 88px;
+  height: clamp(310px, 48vh, 390px);
   border-radius: 50%;
   background:
-    radial-gradient(circle at 50% 8%, rgba(193, 240, 255, 0.7) 0 3px, transparent 4px),
-    radial-gradient(circle at 40% 34%, rgba(118, 214, 255, 0.5) 0 2px, transparent 3px),
-    radial-gradient(circle at 54% 62%, rgba(118, 214, 255, 0.28) 0 2px, transparent 3px);
+    radial-gradient(circle at 50% 0%, rgba(214, 250, 255, 0.74) 0 2px, transparent 5px),
+    radial-gradient(circle at 44% 34%, rgba(118, 214, 255, 0.44) 0 2px, transparent 5px),
+    radial-gradient(circle at 58% 70%, rgba(118, 214, 255, 0.38) 0 2px, transparent 5px);
   filter: blur(0.2px);
-  opacity: 0.62;
-  transform: translateX(-50%);
+  opacity: 0;
+  transform: translateX(-50%) rotate(-24deg) scaleY(0.74);
+  transform-origin: 50% 0;
+  transition:
+    opacity 420ms ease,
+    transform 680ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  pointer-events: none;
 }
 
 .thought-stream::before {
   content: "";
   position: absolute;
-  inset: 4px 14px;
-  border-left: 1px solid rgba(119, 210, 255, 0.28);
+  left: 50%;
+  top: 0;
+  width: 36px;
+  height: 100%;
+  border-left: 1px solid rgba(174, 232, 255, 0.42);
   border-radius: 50%;
-  transform: rotate(-14deg);
+  filter:
+    blur(0.1px)
+    drop-shadow(0 0 9px rgba(118, 217, 255, 0.4));
+  transform: translateX(-50%);
   animation: streamCurl 3.4s ease-in-out infinite alternate;
+}
+
+.thought-stream::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 22px;
+  height: 100%;
+  border-left: 7px solid rgba(108, 206, 255, 0.08);
+  border-radius: 50%;
+  filter: blur(8px);
+  transform: translateX(-50%);
+}
+
+.has-draft-thought:not(.is-releasing) .thought-stream {
+  opacity: 0.86;
+  transform: translateX(-50%) rotate(-24deg) scaleY(1);
+}
+
+.is-releasing .thought-stream {
+  animation: none;
+  transition: none;
 }
 
 .release-trail {
@@ -972,7 +1013,7 @@ button {
 }
 
 .is-releasing .release-trail {
-  animation: releaseTrail 1600ms cubic-bezier(0.16, 0.8, 0.24, 1) 520ms both;
+  animation: none;
 }
 
 .just-released .water-surface {
@@ -1152,33 +1193,39 @@ button {
 
 @keyframes thoughtRelease {
   0% {
-    opacity: 1;
-    transform: translate3d(-50%, 0, 0) scale(1);
-    filter: brightness(1);
+    opacity: 0;
+    transform: translate3d(calc(-50% + 42px), -8px, 0) scale(0.28);
+    filter: brightness(1.75) blur(7px);
   }
 
-  18% {
-    opacity: 1;
-    transform: translate3d(calc(-50% - 12px), 8px, 0) scale(0.9);
-    filter: brightness(1.32);
+  12% {
+    opacity: 0.72;
+    transform: translate3d(calc(-50% + 26px), 16px, 0) scale(0.56);
+    filter: brightness(1.48) blur(3.6px);
   }
 
-  56% {
-    opacity: 1;
-    transform: translate3d(calc(-50% - var(--thought-stream-x)), 54px, 0) scale(0.76);
-    filter: brightness(1.18) blur(0.1px);
+  34% {
+    opacity: 0.95;
+    transform: translate3d(calc(-50% - 8px), 58px, 0) scale(0.78);
+    filter: brightness(1.24) blur(0.7px);
+  }
+
+  58% {
+    opacity: 0.88;
+    transform: translate3d(calc(-50% - 46px), 110px, 0) scale(0.58);
+    filter: brightness(1.34) blur(0.45px);
   }
 
   82% {
-    opacity: 0.72;
-    transform: translate3d(calc(-50% - var(--thought-anchor-x)), 104px, 0) scale(0.44);
-    filter: brightness(1.55) blur(0.7px);
+    opacity: 0.48;
+    transform: translate3d(calc(-50% - var(--thought-anchor-x)), 156px, 0) scale(0.34);
+    filter: brightness(1.62) blur(1.2px);
   }
 
   100% {
     opacity: 0;
-    transform: translate3d(calc(-50% - var(--thought-anchor-x)), 128px, 0) scale(0.18);
-    filter: brightness(1.8) blur(2px);
+    transform: translate3d(calc(-50% - var(--thought-anchor-x)), 192px, 0) scale(0.12);
+    filter: brightness(1.9) blur(2.8px);
   }
 }
 
@@ -1187,16 +1234,16 @@ button {
     transform: translate3d(0, 0, 0) rotate(0deg);
   }
 
-  18% {
-    transform: translate3d(-10px, 11px, 0) rotate(-3deg);
+  22% {
+    transform: translate3d(-8px, 24px, 0) rotate(1.4deg);
   }
 
-  54% {
-    transform: translate3d(-18px, 82px, 0) rotate(5deg);
+  52% {
+    transform: translate3d(-16px, 88px, 0) rotate(5.2deg);
   }
 
-  82% {
-    transform: translate3d(-10px, 138px, 0) rotate(10deg);
+  78% {
+    transform: translate3d(-12px, 150px, 0) rotate(8.4deg);
   }
 
   100% {
@@ -1213,14 +1260,21 @@ button {
   }
 
   18% {
-    transform: translate(-50%, -50%) scale(1.8);
+    transform: translate(-50%, -50%) scale(1.38);
     box-shadow:
       0 0 16px 8px rgba(218, 250, 255, 0.98),
       0 0 50px 22px rgba(90, 192, 255, 0.52);
   }
 
+  52% {
+    transform: translate(-50%, -50%) scale(1.32);
+    box-shadow:
+      0 0 18px 8px rgba(218, 250, 255, 0.96),
+      0 0 58px 24px rgba(90, 192, 255, 0.5);
+  }
+
   76% {
-    transform: translate(-50%, -50%) scale(1.22);
+    transform: translate(-50%, -50%) scale(1.12);
     box-shadow:
       0 0 18px 8px rgba(123, 214, 255, 0.9),
       0 0 56px 24px rgba(63, 164, 235, 0.44);
@@ -1237,26 +1291,26 @@ button {
 @keyframes releaseTrail {
   0% {
     opacity: 0;
-    transform: translateX(-50%) translateY(-28px) scale(0.58) rotate(-7deg);
-    filter: blur(0.6px);
+    transform: translateX(-50%) translateY(-10px) scale(0.54) rotate(-6deg);
+    filter: blur(1.2px);
   }
 
-  24% {
-    opacity: 0.88;
-    transform: translateX(-50%) translateY(-6px) scale(0.86) rotate(2deg);
-    filter: blur(0.15px);
+  34% {
+    opacity: 0.24;
+    transform: translateX(-50%) translateY(16px) scale(0.82) rotate(-1deg);
+    filter: blur(1px);
   }
 
-  74% {
-    opacity: 0.58;
-    transform: translateX(-50%) translateY(26px) scale(1.04) rotate(-4deg);
-    filter: blur(0.35px);
+  72% {
+    opacity: 0.18;
+    transform: translateX(-50%) translateY(44px) scale(1) rotate(3deg);
+    filter: blur(1.2px);
   }
 
   100% {
     opacity: 0;
-    transform: translateX(-50%) translateY(46px) scale(0.82) rotate(3deg);
-    filter: blur(1px);
+    transform: translateX(-50%) translateY(58px) scale(0.78) rotate(5deg);
+    filter: blur(1.4px);
   }
 }
 
@@ -1339,13 +1393,39 @@ button {
 
 @keyframes streamCurl {
   from {
-    opacity: 0.4;
-    transform: rotate(-18deg) scaleX(0.82);
+    opacity: 0.42;
+    transform: translateX(-50%) scaleX(0.72);
   }
 
   to {
-    opacity: 0.9;
-    transform: rotate(16deg) scaleX(1.12);
+    opacity: 0.94;
+    transform: translateX(-50%) scaleX(1.12);
+  }
+}
+
+@keyframes threadCondense {
+  0% {
+    opacity: 0.86;
+    transform: translateX(-50%) rotate(-24deg) scaleY(1);
+    filter: blur(0.2px) brightness(1);
+  }
+
+  45% {
+    opacity: 0.46;
+    transform: translateX(-44%) translateY(54px) rotate(-22deg) scaleY(0.86) scaleX(0.94);
+    filter: blur(1.4px) brightness(1.18);
+  }
+
+  76% {
+    opacity: 0.16;
+    transform: translateX(-30%) translateY(112px) rotate(-18deg) scaleY(0.52) scaleX(0.72);
+    filter: blur(3.2px) brightness(1.42);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-20%) translateY(146px) rotate(-14deg) scaleY(0.28) scaleX(0.56);
+    filter: blur(5px) brightness(1.7);
   }
 }
 
@@ -1363,15 +1443,16 @@ button {
   }
 
   .thought-cloud {
-    top: 382px;
+    top: 330px;
   }
 
   .thought-stream {
-    top: 306px;
+    top: 72px;
+    height: 345px;
   }
 
   .wand-hand {
-    top: 86px;
+    top: 54px;
   }
 }
 

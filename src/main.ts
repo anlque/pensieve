@@ -6,11 +6,16 @@ const backButton = document.querySelector<HTMLButtonElement>('.back-button');
 const thoughtForm = document.querySelector<HTMLFormElement>('.thought-form');
 const thoughtInput = document.querySelector<HTMLInputElement>('.thought-input');
 const thoughtCloudText = document.querySelector<HTMLElement>('.thought-cloud-text');
+const thoughtCloud = document.querySelector<HTMLElement>('.thought-cloud');
+const thoughtStream = document.querySelector<HTMLElement>('.thought-stream');
+const releaseTrail = document.querySelector<HTMLElement>('.release-trail');
+const wandHand = document.querySelector<HTMLElement>('.wand-hand');
+const wandLight = document.querySelector<HTMLElement>('.wand-light');
 const pensieveThoughts = document.querySelector<HTMLElement>('.pensieve-thoughts');
 const captureScreen = document.querySelector<HTMLElement>('[data-screen="capture"]');
 const pensieveScene = document.querySelector<HTMLElement>('.pensieve-scene');
 const stirZone = document.querySelector<HTMLElement>('.stir-zone');
-const releaseDurationMs = 2600;
+const releaseDurationMs = 3000;
 const storageKey = 'pensieve.thoughts.v1';
 
 type PensieveThought = {
@@ -31,6 +36,7 @@ let thoughts: PensieveThought[] = [];
 let stirTimer = 0;
 let surfacingThoughtId: number | null = null;
 let surfacingTimer = 0;
+let releaseFrame = 0;
 
 const thoughtPositions = [
   { x: 50, y: 50 },
@@ -105,6 +111,103 @@ const stopStirring = () => {
   stirTimer = window.setTimeout(() => {
     stage?.classList.remove('is-stirring');
   }, 900);
+};
+
+const mix = (from: number, to: number, progress: number) => from + (to - from) * progress;
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const easeInOut = (progress: number) =>
+  progress < 0.5
+    ? 4 * progress * progress * progress
+    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+const easeOut = (progress: number) => 1 - Math.pow(1 - progress, 3);
+
+const fadeBetween = (progress: number, start: number, end: number) => {
+  const amount = clamp((progress - start) / (end - start), 0, 1);
+  return amount * amount * (3 - 2 * amount);
+};
+
+const resetReleaseStyles = () => {
+  [thoughtCloud, thoughtStream, releaseTrail, wandHand, wandLight].forEach((element) => {
+    element?.removeAttribute('style');
+  });
+};
+
+const animateRelease = () => {
+  window.cancelAnimationFrame(releaseFrame);
+
+  const startedAt = window.performance.now();
+  const anchorX = Math.min(92, window.innerWidth * 0.14);
+
+  const step = (now: number) => {
+    const progress = clamp((now - startedAt) / releaseDurationMs, 0, 1);
+    const travel = easeInOut(progress);
+    const dissolve = fadeBetween(progress, 0.7, 1);
+    const birth = easeOut(fadeBetween(progress, 0, 0.3));
+
+    const cloudX = mix(42, -anchorX, travel) + Math.sin(progress * Math.PI) * 10;
+    const cloudY = mix(-8, 192, travel) - Math.sin(progress * Math.PI) * 14;
+    const cloudScale = (0.24 + birth * 0.68) * (1 - dissolve * 0.78);
+    const cloudOpacity = Math.min(1, birth * 1.12) * (1 - dissolve);
+    const cloudBlur = mix(6.5, 0.2, birth) + dissolve * 2.6;
+    const cloudBrightness = 1.1 + (1 - birth) * 0.7 + dissolve * 0.62;
+
+    const handY = mix(0, 152, travel);
+    const handX = -10 - Math.sin(progress * Math.PI) * 7;
+    const handRotate = mix(-0.8, 8.2, travel);
+    const handReturn = fadeBetween(progress, 0.86, 1);
+    const finalHandX = mix(handX, 0, handReturn);
+    const finalHandY = mix(handY, 0, handReturn);
+    const finalHandRotate = mix(handRotate, 0, handReturn);
+
+    const threadOpacity = 0.86 * Math.pow(1 - progress, 1.55);
+    const threadY = mix(0, 138, easeOut(progress));
+    const threadScaleY = mix(1, 0.34, easeOut(progress));
+    const threadBlur = mix(0.2, 5.2, progress);
+
+    const trailOpacity = Math.sin(progress * Math.PI) * 0.22;
+    const trailY = mix(-8, 58, travel);
+    const trailScale = mix(0.56, 0.9, Math.sin(progress * Math.PI));
+
+    const glowScale = 1 + Math.sin(progress * Math.PI) * 0.38;
+
+    if (thoughtCloud) {
+      thoughtCloud.style.opacity = String(cloudOpacity);
+      thoughtCloud.style.transform = `translate3d(calc(-50% + ${cloudX.toFixed(2)}px), ${cloudY.toFixed(2)}px, 0) scale(${cloudScale.toFixed(3)})`;
+      thoughtCloud.style.filter = `brightness(${cloudBrightness.toFixed(3)}) blur(${cloudBlur.toFixed(2)}px)`;
+    }
+
+    if (wandHand) {
+      wandHand.style.transform = `translate3d(${finalHandX.toFixed(2)}px, ${finalHandY.toFixed(2)}px, 0) rotate(${finalHandRotate.toFixed(2)}deg)`;
+    }
+
+    if (wandLight) {
+      wandLight.style.transform = `translate(-50%, -50%) scale(${glowScale.toFixed(3)})`;
+    }
+
+    if (thoughtStream) {
+      thoughtStream.style.opacity = String(threadOpacity);
+      thoughtStream.style.transform = `translateX(-50%) translateY(${threadY.toFixed(2)}px) rotate(-24deg) scaleY(${threadScaleY.toFixed(3)})`;
+      thoughtStream.style.filter = `blur(${threadBlur.toFixed(2)}px) brightness(${mix(1, 1.5, progress).toFixed(2)})`;
+    }
+
+    if (releaseTrail) {
+      releaseTrail.style.opacity = String(trailOpacity);
+      releaseTrail.style.transform = `translateX(-50%) translateY(${trailY.toFixed(2)}px) scale(${trailScale.toFixed(3)}) rotate(${mix(-4, 5, travel).toFixed(2)}deg)`;
+      releaseTrail.style.filter = `blur(${mix(1.1, 1.6, progress).toFixed(2)}px)`;
+    }
+
+    if (progress < 1) {
+      releaseFrame = window.requestAnimationFrame(step);
+      return;
+    }
+
+    finishRelease();
+  };
+
+  releaseFrame = window.requestAnimationFrame(step);
 };
 
 const addThoughtToPensieve = (text: string) => {
@@ -191,6 +294,8 @@ const openCaptureScreen = () => {
 
 const closeCaptureScreen = () => {
   window.clearTimeout(releaseTimer);
+  window.cancelAnimationFrame(releaseFrame);
+  resetReleaseStyles();
   stage?.classList.remove('is-capturing', 'has-draft-thought', 'is-releasing', 'just-released');
   captureScreen?.setAttribute('aria-hidden', 'true');
 
@@ -215,6 +320,8 @@ const syncThoughtPreview = () => {
 };
 
 const finishRelease = () => {
+  window.cancelAnimationFrame(releaseFrame);
+
   if (releasedThought) {
     addThoughtToPensieve(releasedThought);
     releasedThought = '';
@@ -222,6 +329,7 @@ const finishRelease = () => {
 
   stage?.classList.remove('is-releasing', 'has-draft-thought');
   stage?.classList.add('just-released');
+  resetReleaseStyles();
 
   if (thoughtInput) {
     thoughtInput.value = '';
@@ -267,7 +375,7 @@ thoughtForm?.addEventListener('submit', (event) => {
   stage?.classList.add('is-releasing');
 
   window.clearTimeout(releaseTimer);
-  releaseTimer = window.setTimeout(finishRelease, releaseDurationMs);
+  animateRelease();
 });
 
 stage?.classList.remove('is-capturing', 'has-draft-thought', 'is-releasing', 'just-released', 'is-stirring');
