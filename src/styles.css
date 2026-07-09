@@ -159,6 +159,8 @@ button {
 }
 
 .screen-capture {
+  --thought-anchor-x: min(92px, 14vw);
+  --thought-stream-x: min(50px, 8vw);
   opacity: 0;
   transform: translateY(16px);
   visibility: hidden;
@@ -297,6 +299,12 @@ button {
 }
 
 .pensieve-thought {
+  --thought-x: 50%;
+  --thought-y: 50%;
+  --thought-scale: 1;
+  --thought-delay: 0s;
+  --thought-duration: 10s;
+  --thought-depth: 0.6;
   position: absolute;
   left: var(--thought-x);
   top: var(--thought-y);
@@ -340,6 +348,13 @@ button {
   filter: blur(calc((1 - var(--thought-depth)) * 1.1px)) brightness(1.2);
 }
 
+.pensieve-thought.is-surfacing {
+  animation:
+    thoughtSurfaceIn 1700ms cubic-bezier(0.16, 0.8, 0.24, 1) both,
+    thoughtDrift var(--thought-duration) ease-in-out var(--thought-delay) infinite,
+    thoughtSurface calc(var(--thought-duration) * 1.45) ease-in-out var(--thought-delay) infinite;
+}
+
 .pensieve-thought::before,
 .pensieve-thought::after {
   content: "";
@@ -368,7 +383,15 @@ button {
 }
 
 .has-many-thoughts .pensieve-thought:nth-child(3n) {
-  opacity: calc(0.16 + var(--thought-depth) * 0.38);
+  animation:
+    thoughtDrift calc(var(--thought-duration) * 1.18) ease-in-out var(--thought-delay) infinite,
+    thoughtSurfaceDeep calc(var(--thought-duration) * 1.7) ease-in-out var(--thought-delay) infinite;
+}
+
+.has-many-thoughts .pensieve-thought:nth-child(5n) {
+  animation:
+    thoughtDrift calc(var(--thought-duration) * 1.32) ease-in-out var(--thought-delay) infinite,
+    thoughtSurfaceBarely calc(var(--thought-duration) * 1.9) ease-in-out var(--thought-delay) infinite;
 }
 
 .water-surface::before {
@@ -807,8 +830,8 @@ button {
 
 .thought-cloud {
   position: absolute;
-  left: 50%;
-  top: clamp(286px, 42vh, 360px);
+  left: calc(50% + var(--thought-anchor-x));
+  top: clamp(420px, 61vh, 500px);
   z-index: 7;
   display: grid;
   place-items: center;
@@ -875,8 +898,8 @@ button {
 
 .thought-stream {
   position: absolute;
-  left: 50%;
-  top: clamp(214px, 32vh, 292px);
+  left: calc(50% + var(--thought-stream-x));
+  top: clamp(332px, 51vh, 408px);
   z-index: 4;
   width: 72px;
   height: 170px;
@@ -902,21 +925,50 @@ button {
 
 .release-trail {
   position: absolute;
-  left: calc(50% - 17px);
-  top: clamp(352px, 52vh, 430px);
+  left: calc(50% + var(--thought-stream-x));
+  top: clamp(336px, 50vh, 414px);
   z-index: 5;
-  width: 34px;
-  height: 168px;
-  border-radius: 999px;
+  width: 112px;
+  height: 190px;
   background:
-    linear-gradient(180deg, rgba(190, 243, 255, 0), rgba(118, 217, 255, 0.42), rgba(190, 243, 255, 0)),
-    radial-gradient(circle at 50% 20%, rgba(214, 250, 255, 0.9) 0 2px, transparent 4px),
-    radial-gradient(circle at 36% 52%, rgba(118, 217, 255, 0.62) 0 2px, transparent 4px),
-    radial-gradient(circle at 58% 76%, rgba(118, 217, 255, 0.44) 0 2px, transparent 4px);
-  filter: blur(0.3px);
+    radial-gradient(circle at 55% 8%, rgba(221, 252, 255, 0.78) 0 2px, transparent 5px),
+    radial-gradient(circle at 39% 34%, rgba(132, 221, 255, 0.56) 0 2px, transparent 5px),
+    radial-gradient(circle at 61% 61%, rgba(132, 221, 255, 0.42) 0 2px, transparent 5px),
+    radial-gradient(ellipse at 50% 58%, rgba(103, 200, 255, 0.16), transparent 54%);
+  filter: blur(0.15px);
   opacity: 0;
-  transform: translateX(-50%) scaleY(0.2);
+  transform: translateX(-50%) scale(0.76);
   transform-origin: 50% 0;
+  pointer-events: none;
+}
+
+.release-trail::before,
+.release-trail::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.release-trail::before {
+  left: 44%;
+  top: 0;
+  width: 44px;
+  height: 178px;
+  border-left: 1px solid rgba(181, 238, 255, 0.48);
+  border-radius: 50%;
+  filter: drop-shadow(0 0 8px rgba(99, 204, 255, 0.5));
+  transform: rotate(-13deg);
+}
+
+.release-trail::after {
+  inset: 12px 26px 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 38% 22%, rgba(223, 252, 255, 0.64) 0 2px, transparent 5px),
+    radial-gradient(circle at 68% 42%, rgba(112, 214, 255, 0.5) 0 2px, transparent 5px),
+    radial-gradient(circle at 43% 68%, rgba(112, 214, 255, 0.42) 0 2px, transparent 5px),
+    linear-gradient(180deg, transparent, rgba(120, 220, 255, 0.12) 46%, transparent);
+  transform: skewX(-8deg);
 }
 
 .is-releasing .release-trail {
@@ -1001,6 +1053,37 @@ button {
   }
 }
 
+@keyframes thoughtSurfaceDeep {
+  0%,
+  100% {
+    opacity: calc(0.04 + var(--thought-depth) * 0.16);
+    filter: blur(calc((1 - var(--thought-depth)) * 3px)) brightness(0.78);
+  }
+
+  46% {
+    opacity: calc(0.12 + var(--thought-depth) * 0.24);
+    filter: blur(calc((1 - var(--thought-depth)) * 1.9px)) brightness(0.94);
+  }
+
+  78% {
+    opacity: calc(0.02 + var(--thought-depth) * 0.12);
+    filter: blur(calc((1 - var(--thought-depth)) * 3.4px)) brightness(0.72);
+  }
+}
+
+@keyframes thoughtSurfaceBarely {
+  0%,
+  100% {
+    opacity: calc(0.01 + var(--thought-depth) * 0.08);
+    filter: blur(calc((1 - var(--thought-depth)) * 3.8px)) brightness(0.64);
+  }
+
+  52% {
+    opacity: calc(0.06 + var(--thought-depth) * 0.14);
+    filter: blur(calc((1 - var(--thought-depth)) * 2.6px)) brightness(0.82);
+  }
+}
+
 @keyframes thoughtScatter {
   from {
     transform:
@@ -1025,6 +1108,48 @@ button {
   }
 }
 
+@keyframes thoughtSurfaceIn {
+  0% {
+    color: rgba(233, 243, 255, 0);
+    opacity: 0;
+    transform:
+      translate3d(-50%, -28%, 0)
+      scale(0.22);
+    filter: blur(8px) brightness(2);
+    clip-path: ellipse(30% 18% at 50% 54%);
+  }
+
+  34% {
+    color: rgba(233, 243, 255, 0);
+    opacity: 0.68;
+    transform:
+      translate3d(-50%, -40%, 0)
+      scale(0.44);
+    filter: blur(5px) brightness(1.8);
+    clip-path: ellipse(38% 22% at 50% 54%);
+  }
+
+  66% {
+    color: rgba(233, 243, 255, 0.36);
+    opacity: 0.58;
+    transform:
+      translate3d(-50%, -55%, 0)
+      scale(0.72);
+    filter: blur(1.8px) brightness(1.28);
+    clip-path: ellipse(54% 42% at 50% 52%);
+  }
+
+  100% {
+    color: rgba(233, 243, 255, 0.9);
+    opacity: calc(0.18 + var(--thought-depth) * 0.48);
+    transform:
+      translate3d(-50%, -50%, 0)
+      scale(calc(var(--thought-scale) * (0.76 + var(--thought-depth) * 0.28)));
+    filter: blur(calc((1 - var(--thought-depth)) * 1.8px));
+    clip-path: ellipse(78% 64% at 50% 50%);
+  }
+}
+
 @keyframes thoughtRelease {
   0% {
     opacity: 1;
@@ -1034,25 +1159,25 @@ button {
 
   18% {
     opacity: 1;
-    transform: translate3d(-56%, -16px, 0) scale(0.9);
+    transform: translate3d(calc(-50% - 12px), 8px, 0) scale(0.9);
     filter: brightness(1.32);
   }
 
   56% {
     opacity: 1;
-    transform: translate3d(-50%, 94px, 0) scale(0.76);
+    transform: translate3d(calc(-50% - var(--thought-stream-x)), 54px, 0) scale(0.76);
     filter: brightness(1.18) blur(0.1px);
   }
 
   82% {
     opacity: 0.72;
-    transform: translate3d(-50%, 184px, 0) scale(0.44);
+    transform: translate3d(calc(-50% - var(--thought-anchor-x)), 104px, 0) scale(0.44);
     filter: brightness(1.55) blur(0.7px);
   }
 
   100% {
     opacity: 0;
-    transform: translate3d(-50%, 226px, 0) scale(0.18);
+    transform: translate3d(calc(-50% - var(--thought-anchor-x)), 128px, 0) scale(0.18);
     filter: brightness(1.8) blur(2px);
   }
 }
@@ -1112,22 +1237,26 @@ button {
 @keyframes releaseTrail {
   0% {
     opacity: 0;
-    transform: translateX(-50%) scaleY(0.16) rotate(-8deg);
+    transform: translateX(-50%) translateY(-28px) scale(0.58) rotate(-7deg);
+    filter: blur(0.6px);
   }
 
   24% {
-    opacity: 0.92;
-    transform: translateX(-50%) scaleY(0.74) rotate(4deg);
+    opacity: 0.88;
+    transform: translateX(-50%) translateY(-6px) scale(0.86) rotate(2deg);
+    filter: blur(0.15px);
   }
 
   74% {
-    opacity: 0.7;
-    transform: translateX(-50%) scaleY(1.08) rotate(-3deg);
+    opacity: 0.58;
+    transform: translateX(-50%) translateY(26px) scale(1.04) rotate(-4deg);
+    filter: blur(0.35px);
   }
 
   100% {
     opacity: 0;
-    transform: translateX(-50%) scaleY(0.88) rotate(2deg);
+    transform: translateX(-50%) translateY(46px) scale(0.82) rotate(3deg);
+    filter: blur(1px);
   }
 }
 
@@ -1234,7 +1363,11 @@ button {
   }
 
   .thought-cloud {
-    top: 286px;
+    top: 382px;
+  }
+
+  .thought-stream {
+    top: 306px;
   }
 
   .wand-hand {

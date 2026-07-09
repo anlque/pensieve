@@ -11,7 +11,6 @@ const captureScreen = document.querySelector<HTMLElement>('[data-screen="capture
 const pensieveScene = document.querySelector<HTMLElement>('.pensieve-scene');
 const stirZone = document.querySelector<HTMLElement>('.stir-zone');
 const releaseDurationMs = 2600;
-const maxVisibleThoughts = 5;
 const storageKey = 'pensieve.thoughts.v1';
 
 type PensieveThought = {
@@ -28,9 +27,10 @@ type PensieveThought = {
 let releaseTimer = 0;
 let thoughtId = 0;
 let releasedThought = '';
-let visibleCycleIndex = 0;
 let thoughts: PensieveThought[] = [];
 let stirTimer = 0;
+let surfacingThoughtId: number | null = null;
+let surfacingTimer = 0;
 
 const thoughtPositions = [
   { x: 50, y: 50 },
@@ -44,27 +44,18 @@ const thoughtPositions = [
   { x: 31, y: 72 },
 ];
 
-const getVisibleThoughts = () => {
-  if (thoughts.length <= maxVisibleThoughts) {
-    return thoughts;
-  }
-
-  return Array.from({ length: maxVisibleThoughts }, (_, index) => {
-    const thoughtIndex = (visibleCycleIndex + index) % thoughts.length;
-    return thoughts[thoughtIndex];
-  });
-};
-
 const renderPensieveThoughts = () => {
   if (!pensieveThoughts) {
     return;
   }
 
-  const visibleThoughts = getVisibleThoughts();
   pensieveThoughts.replaceChildren(
-    ...visibleThoughts.map((thought) => {
+    ...thoughts.map((thought) => {
       const item = document.createElement('span');
       item.className = 'pensieve-thought';
+      if (thought.id === surfacingThoughtId) {
+        item.classList.add('is-surfacing');
+      }
       item.textContent = thought.text;
       item.style.setProperty('--thought-x', `${thought.x}%`);
       item.style.setProperty('--thought-y', `${thought.y}%`);
@@ -77,7 +68,7 @@ const renderPensieveThoughts = () => {
   );
 
   stage?.classList.toggle('has-pensieve-thoughts', thoughts.length > 0);
-  stage?.classList.toggle('has-many-thoughts', thoughts.length > maxVisibleThoughts);
+  stage?.classList.toggle('has-many-thoughts', thoughts.length > 5);
 };
 
 const saveThoughts = () => {
@@ -119,11 +110,12 @@ const stopStirring = () => {
 const addThoughtToPensieve = (text: string) => {
   const slot = thoughtPositions[thoughtId % thoughtPositions.length];
   const drift = thoughtId % 5;
+  const id = thoughtId;
 
   thoughts = [
     ...thoughts,
     {
-      id: thoughtId,
+      id,
       text,
       x: slot.x,
       y: slot.y,
@@ -135,9 +127,15 @@ const addThoughtToPensieve = (text: string) => {
   ];
 
   thoughtId += 1;
-  visibleCycleIndex = Math.max(0, thoughts.length - maxVisibleThoughts);
+  surfacingThoughtId = id;
   renderPensieveThoughts();
   saveThoughts();
+
+  window.clearTimeout(surfacingTimer);
+  surfacingTimer = window.setTimeout(() => {
+    surfacingThoughtId = null;
+    renderPensieveThoughts();
+  }, 1700);
 };
 
 const loadSavedThoughts = () => {
@@ -178,21 +176,11 @@ const loadSavedThoughts = () => {
         thoughtId += 1;
       });
 
-    visibleCycleIndex = Math.max(0, thoughts.length - maxVisibleThoughts);
     renderPensieveThoughts();
   } catch {
     renderPensieveThoughts();
   }
 };
-
-window.setInterval(() => {
-  if (thoughts.length <= maxVisibleThoughts) {
-    return;
-  }
-
-  visibleCycleIndex = (visibleCycleIndex + 1) % thoughts.length;
-  renderPensieveThoughts();
-}, 5200);
 
 const openCaptureScreen = () => {
   stage?.classList.add('is-capturing');
