@@ -41,7 +41,6 @@ import {
 } from './dom';
 import {
   CLEAR_THOUGHTS_DURATION_MS,
-  LANGUAGE_NAMES,
   MAX_STORED_THOUGHTS,
   MAX_THOUGHT_LENGTH,
   MIXING_ORBITS,
@@ -49,13 +48,21 @@ import {
   STORAGE_KEYS,
   THREAD_CLEAR_DURATION_MS,
   THOUGHT_SURFACE_DURATION_MS,
-  THOUGHT_POSITIONS,
-  WALLPAPER_NAMES,
   type LanguageName,
   type WallpaperName,
 } from './config';
-import { translations, type TranslationKey } from './i18n';
+import { isLanguageName, isWallpaperName } from './guards';
+import { loadLanguage, saveLanguage, t } from './localization';
+import { createPensieveThought } from './thoughts';
 import type { DragState, PensieveThought } from './types';
+import { compressWallpaperImage } from './wallpaper';
+import {
+  clamp,
+  easeInOut,
+  easeOut,
+  fadeBetween,
+  mix,
+} from './utils/math';
 
 let thoughtThreadLength = 0;
 let thoughtThreadClearFrame = 0;
@@ -73,123 +80,6 @@ let completionTimer = 0;
 let selectedThoughtId: number | null = null;
 let dragState: DragState | null = null;
 let suppressThoughtClick = false;
-
-const isWallpaperName = (value: string | null): value is WallpaperName =>
-  Boolean(value && WALLPAPER_NAMES.includes(value as WallpaperName));
-
-const isLanguageName = (value: string | null): value is LanguageName =>
-  Boolean(value && LANGUAGE_NAMES.includes(value as LanguageName));
-
-let currentLanguage: LanguageName = isLanguageName(document.documentElement.lang) ? document.documentElement.lang : 'ru';
-
-const t = (key: TranslationKey) => translations[currentLanguage][key];
-
-const setText = (selector: string, key: TranslationKey) => {
-  const element = document.querySelector<HTMLElement>(selector);
-  if (element) {
-    element.textContent = t(key);
-  }
-};
-
-const setHtml = (selector: string, key: TranslationKey) => {
-  const element = document.querySelector<HTMLElement>(selector);
-  if (element) {
-    const parts = t(key).split(/<br\s*\/?>/i);
-    element.replaceChildren(
-      ...parts.flatMap((part, index) =>
-        index === 0 ? [document.createTextNode(part)] : [document.createElement('br'), document.createTextNode(part)],
-      ),
-    );
-  }
-};
-
-const setAttribute = (selector: string, attribute: string, key: TranslationKey) => {
-  const element = document.querySelector<HTMLElement>(selector);
-  if (element) {
-    element.setAttribute(attribute, t(key));
-  }
-};
-
-const applyLanguage = (language: LanguageName) => {
-  currentLanguage = language;
-  document.documentElement.lang = language;
-  document.title = t('app.title');
-  document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', t('app.description'));
-
-  setAttribute('.info-button', 'aria-label', 'info.button');
-  setAttribute('.tune-button', 'aria-label', 'settings.button');
-  setText('.wallpaper-menu-title', 'settings.wallpaper');
-  setText('.language-switch-title', 'settings.language');
-  setAttribute('.language-switch', 'aria-label', 'settings.language');
-  setText('[data-wallpaper-option="forest"] span:last-child', 'wallpaper.forest');
-  setText('[data-wallpaper-option="moon"] span:last-child', 'wallpaper.moon');
-  setText('[data-wallpaper-option="deep"] span:last-child', 'wallpaper.deep');
-  setText('[data-wallpaper-option="embers"] span:last-child', 'wallpaper.embers');
-  setText('[data-wallpaper-option="office"] span:last-child', 'wallpaper.office');
-  setText('[data-wallpaper-option="library"] span:last-child', 'wallpaper.library');
-  setText('[data-wallpaper-option="quidditch"] span:last-child', 'wallpaper.quidditch');
-  setText('[data-wallpaper-option="custom"] span:last-child', 'wallpaper.custom');
-  setAttribute('.wallpaper-upload-input', 'aria-label', 'wallpaper.upload');
-  setAttribute('.info-close-button', 'aria-label', 'info.close');
-  setText('#info-dialog-title', 'info.title');
-  setText('.info-dialog-content p', 'info.summary');
-  setText('.info-dialog-content li:nth-child(1)', 'info.item.add');
-  setText('.info-dialog-content li:nth-child(2)', 'info.item.mix');
-  setText('.info-dialog-content li:nth-child(3)', 'info.item.edit');
-  setText('.info-dialog-content li:nth-child(4)', 'info.item.wallpaper');
-  setHtml('#app-title', 'hero.title');
-  setHtml('.hero-copy p', 'hero.subtitle');
-  setAttribute('.back-button', 'aria-label', 'back');
-  setText('label[for="thought-input"]', 'thought.label');
-  setAttribute('.thought-input', 'placeholder', 'thought.placeholder');
-  setAttribute('.thought-submit', 'aria-label', 'thought.submit');
-  if (thoughtCloudText && !thoughtInput?.value.trim()) {
-    thoughtCloudText.textContent = t('thought.preview');
-  }
-  setText('.let-go-button', 'letGo');
-  setText('.mix-button', 'mix');
-  setAttribute('.mix-close-button', 'aria-label', 'mix.close');
-  setAttribute('.thought-modal', 'aria-label', 'modal.label');
-  setAttribute('.thought-modal-close', 'aria-label', 'modal.close');
-  setAttribute('.thought-modal-actions', 'aria-label', 'modal.actions');
-  setText('.thought-edit-button', 'modal.edit');
-  setText('.thought-delete-button', 'modal.delete');
-  setText('label[for="thought-edit-input"]', 'modal.editLabel');
-  setText('.thought-save-button', 'modal.save');
-  setText('.thought-cancel-button', 'modal.cancel');
-  setText('.completion-title', 'completion.title');
-  setText('.completion-text', 'completion.text');
-  setAttribute('.wand-button', 'aria-label', 'wand.button');
-  setHtml('.primary-action p', 'home.cta');
-
-  languageOptions.forEach((option) => {
-    const isActive = option.dataset.languageOption === language;
-    option.classList.toggle('is-active', isActive);
-    option.setAttribute('aria-pressed', String(isActive));
-  });
-};
-
-const saveLanguage = (language: LanguageName) => {
-  applyLanguage(language);
-
-  try {
-    window.localStorage.setItem(STORAGE_KEYS.language, language);
-  } catch {
-    // Language preference is optional; the default copy remains usable.
-  }
-};
-
-const loadLanguage = () => {
-  let savedLanguage: string | null = null;
-
-  try {
-    savedLanguage = window.localStorage.getItem(STORAGE_KEYS.language);
-  } catch {
-    savedLanguage = null;
-  }
-
-  applyLanguage(isLanguageName(savedLanguage) ? savedLanguage : currentLanguage);
-};
 
 const closeWallpaperMenu = () => {
   stage?.classList.remove('has-open-wallpaper-menu');
@@ -300,49 +190,6 @@ const loadWallpaper = () => {
   applyWallpaper(wallpaper === 'custom' && !hasCustomWallpaper ? 'forest' : wallpaper);
 };
 
-const readImageFile = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.addEventListener('load', () => {
-      if (typeof reader.result === 'string') {
-        resolve(reader.result);
-        return;
-      }
-
-      reject(new Error('Unable to read image file.'));
-    });
-    reader.addEventListener('error', () => reject(reader.error ?? new Error('Unable to read image file.')));
-    reader.readAsDataURL(file);
-  });
-
-const loadImage = (source: string) =>
-  new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-    image.addEventListener('load', () => resolve(image));
-    image.addEventListener('error', () => reject(new Error('Unable to load image.')));
-    image.src = source;
-  });
-
-const compressWallpaperImage = async (file: File) => {
-  const source = await readImageFile(file);
-  const image = await loadImage(source);
-  const maxSide = 1600;
-  const ratio = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
-  const width = Math.max(1, Math.round(image.naturalWidth * ratio));
-  const height = Math.max(1, Math.round(image.naturalHeight * ratio));
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-
-  if (!context) {
-    return source;
-  }
-
-  canvas.width = width;
-  canvas.height = height;
-  context.drawImage(image, 0, 0, width, height);
-  return canvas.toDataURL('image/jpeg', 0.82);
-};
-
 const saveCustomWallpaper = async (file: File) => {
   try {
     const imageUrl = await compressWallpaperImage(file);
@@ -382,24 +229,6 @@ const createThoughtElement = (thought: PensieveThought) => {
   return item;
 };
 
-const createPensieveThought = (text: string, id: number): PensieveThought => {
-  const slot = THOUGHT_POSITIONS[id % THOUGHT_POSITIONS.length];
-  const drift = id % 5;
-
-  return {
-    id,
-    text: text.trim().slice(0, MAX_THOUGHT_LENGTH),
-    x: slot.x,
-    y: slot.y,
-    scale: 0.82 + (drift % 3) * 0.08,
-    delay: -(id % 6) * 0.65,
-    duration: 8.8 + (id % 5) * 1.1,
-    depth: 0.42 + (id % 4) * 0.16,
-    orbitRadiusX: 152 + (id % 5) * 34,
-    orbitDuration: 14 + (id % 5) * 1.8,
-  };
-};
-
 const updateThoughtInteractivity = () => {
   const isMixing = Boolean(stage?.classList.contains('is-mixing'));
   const isCapturing = Boolean(stage?.classList.contains('is-capturing'));
@@ -437,8 +266,9 @@ const renderPensieveThoughts = () => {
     return;
   }
 
+  const thoughtsContainer = pensieveThoughts;
   const currentItems = new Map(
-    Array.from(pensieveThoughts.querySelectorAll<HTMLElement>('.pensieve-thought')).map((item) => [
+    Array.from(thoughtsContainer.querySelectorAll<HTMLElement>('.pensieve-thought')).map((item) => [
       item.dataset.thoughtId,
       item,
     ]),
@@ -450,7 +280,7 @@ const renderPensieveThoughts = () => {
     syncThoughtElement(item, thought);
 
     if (!item.isConnected) {
-      pensieveThoughts.append(item);
+      thoughtsContainer.append(item);
     }
 
     currentItems.delete(key);
@@ -671,22 +501,6 @@ const clearSavedThoughts = () => {
   } catch {
     // Storage is a convenience; the app should still work without it.
   }
-};
-
-const mix = (from: number, to: number, progress: number) => from + (to - from) * progress;
-
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-
-const easeInOut = (progress: number) =>
-  progress < 0.5
-    ? 4 * progress * progress * progress
-    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-
-const easeOut = (progress: number) => 1 - Math.pow(1 - progress, 3);
-
-const fadeBetween = (progress: number, start: number, end: number) => {
-  const amount = clamp((progress - start) / (end - start), 0, 1);
-  return amount * amount * (3 - 2 * amount);
 };
 
 const setThoughtThreadErase = (amount: number, direction: 'release' | 'clear' = 'release') => {
@@ -1143,9 +957,10 @@ const startEditingThought = () => {
 
   thoughtEditInput.value = thought.text;
   thoughtModal.classList.add('is-editing');
+  const editInput = thoughtEditInput;
   window.setTimeout(() => {
-    thoughtEditInput.focus();
-    thoughtEditInput.select();
+    editInput.focus();
+    editInput.select();
   }, 80);
 };
 
@@ -1216,14 +1031,20 @@ wallpaperOptions.forEach((option) => {
     }
   });
 });
-wallpaperUploadInput?.addEventListener('change', () => {
-  const file = wallpaperUploadInput.files?.[0];
+wallpaperUploadInput?.addEventListener('change', (event) => {
+  const input = event.currentTarget;
+
+  if (!(input instanceof HTMLInputElement)) {
+    return;
+  }
+
+  const file = input.files?.[0];
 
   if (file) {
     void saveCustomWallpaper(file);
   }
 
-  wallpaperUploadInput.value = '';
+  input.value = '';
 });
 languageOptions.forEach((option) => {
   option.addEventListener('click', () => {
