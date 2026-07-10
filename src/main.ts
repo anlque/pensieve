@@ -41,7 +41,6 @@ import {
 } from './dom';
 import {
   CLEAR_THOUGHTS_DURATION_MS,
-  MAX_STORED_THOUGHTS,
   MAX_THOUGHT_LENGTH,
   RELEASE_DURATION_MS,
   STORAGE_KEYS,
@@ -55,6 +54,11 @@ import { loadLanguage, saveLanguage, t } from './localization';
 import { createAppState } from './state';
 import { createPensieveThought } from './thoughts';
 import { createThoughtRenderer } from './thoughtRenderer';
+import {
+  clearSavedThoughts as clearStoredThoughts,
+  loadSavedThoughts as loadStoredThoughts,
+  saveThoughts as saveStoredThoughts,
+} from './thoughtStorage';
 import type { PensieveThought } from './types';
 import { compressWallpaperImage } from './wallpaper';
 import {
@@ -200,14 +204,6 @@ const saveCustomWallpaper = async (file: File) => {
   }
 };
 
-const saveThoughts = () => {
-  try {
-    window.localStorage.setItem(STORAGE_KEYS.thoughts, JSON.stringify(state.thoughts.map((thought) => thought.text)));
-  } catch {
-    // Storage is a convenience; the app should still work without it.
-  }
-};
-
 const getSelectedThought = () => state.thoughts.find((thought) => thought.id === state.selectedThoughtId);
 
 const isPointOutsidePensieve = (x: number, y: number) => {
@@ -255,7 +251,7 @@ const resetDraggedThought = () => {
 
 const removeThoughtByDrag = (thoughtIdToRemove: number, source: HTMLElement, ghost: HTMLElement | null) => {
   state.thoughts = state.thoughts.filter((thought) => thought.id !== thoughtIdToRemove);
-  saveThoughts();
+  saveStoredThoughts(state.thoughts);
   closeThoughtModal();
   source.classList.add('is-drag-source');
 
@@ -398,14 +394,6 @@ const startThoughtDrag = (event: PointerEvent) => {
     element.setPointerCapture(event.pointerId);
   } catch {
     // Some browsers may not support capture on this element; document listeners still handle the drag.
-  }
-};
-
-const clearSavedThoughts = () => {
-  try {
-    window.localStorage.removeItem(STORAGE_KEYS.thoughts);
-  } catch {
-    // Storage is a convenience; the app should still work without it.
   }
 };
 
@@ -621,7 +609,7 @@ const addThoughtToPensieve = (text: string) => {
   state.thoughtId += 1;
   state.surfacingThoughtId = id;
   renderPensieveThoughts();
-  saveThoughts();
+  saveStoredThoughts(state.thoughts);
 
   window.clearTimeout(state.surfacingTimer);
   state.surfacingTimer = window.setTimeout(() => {
@@ -630,37 +618,11 @@ const addThoughtToPensieve = (text: string) => {
   }, THOUGHT_SURFACE_DURATION_MS);
 };
 
-const loadSavedThoughts = () => {
-  try {
-    const saved = window.localStorage.getItem(STORAGE_KEYS.thoughts);
-
-    if (!saved) {
-      renderPensieveThoughts();
-      return;
-    }
-
-    const savedTexts = JSON.parse(saved);
-
-    if (!Array.isArray(savedTexts)) {
-      renderPensieveThoughts();
-      return;
-    }
-
-    savedTexts
-      .filter((text): text is string => typeof text === 'string' && text.trim().length > 0)
-      .slice(0, MAX_STORED_THOUGHTS)
-      .forEach((text) => {
-        state.thoughts = [
-          ...state.thoughts,
-          createPensieveThought(text, state.thoughtId),
-        ];
-        state.thoughtId += 1;
-      });
-
-    renderPensieveThoughts();
-  } catch {
-    renderPensieveThoughts();
-  }
+const loadSavedThoughtsIntoState = () => {
+  const savedState = loadStoredThoughts();
+  state.thoughts = savedState.thoughts;
+  state.thoughtId = savedState.nextThoughtId;
+  renderPensieveThoughts();
 };
 
 const openCaptureScreen = () => {
@@ -784,7 +746,7 @@ const clearPensieveThoughts = () => {
 
   state.clearTimer = window.setTimeout(() => {
     state.thoughts = [];
-    clearSavedThoughts();
+    clearStoredThoughts();
     renderPensieveThoughts();
     stage?.classList.remove('is-clearing-thoughts');
     stage?.classList.add('just-cleared');
@@ -888,7 +850,7 @@ const saveEditedThought = () => {
     item.id === thought.id ? { ...item, text: nextText.slice(0, MAX_THOUGHT_LENGTH) } : item,
   );
   renderPensieveThoughts();
-  saveThoughts();
+  saveStoredThoughts(state.thoughts);
 
   if (thoughtModalText) {
     thoughtModalText.textContent = nextText.slice(0, MAX_THOUGHT_LENGTH);
@@ -905,7 +867,7 @@ const deleteSelectedThought = () => {
   }
 
   state.thoughts = state.thoughts.filter((item) => item.id !== thought.id);
-  saveThoughts();
+  saveStoredThoughts(state.thoughts);
   closeThoughtModal();
   renderPensieveThoughts();
 
@@ -1087,4 +1049,4 @@ completionScreen?.setAttribute('aria-hidden', 'true');
 infoButton?.setAttribute('aria-expanded', 'false');
 loadLanguage();
 loadWallpaper();
-loadSavedThoughts();
+loadSavedThoughtsIntoState();
