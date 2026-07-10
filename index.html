@@ -2,7 +2,7 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       name="description"
       content="Омут памяти — спокойное приложение для выгрузки мыслей, их перемешивания, редактирования и отпускания."
@@ -26,6 +26,7 @@
       .app-shell {
         min-height: 100vh;
         min-height: 100svh;
+        min-height: 100dvh;
         padding: 0;
       }
 
@@ -34,14 +35,16 @@
         width: 100vw;
         height: 100vh;
         height: 100svh;
-        min-height: 620px;
+        height: 100dvh;
+        min-height: 100svh;
         overflow: hidden;
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-right: env(safe-area-inset-right, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+        --safe-left: env(safe-area-inset-left, 0px);
         background:
-          linear-gradient(180deg, rgba(3, 10, 16, 0.25), rgba(2, 4, 7, 0.92)),
-          radial-gradient(circle at 50% 55%, rgba(55, 119, 154, 0.16), transparent 34%),
-          radial-gradient(circle at 50% 88%, rgba(8, 58, 83, 0.42), transparent 44%),
+          linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.9)),
           #02070b;
-        box-shadow: inset 0 0 72px rgba(137, 208, 255, 0.06);
         isolation: isolate;
       }
 
@@ -57,8 +60,8 @@
         z-index: 9;
         display: grid;
         place-items: center;
-        width: 32px;
-        height: 32px;
+        width: 44px;
+        height: 44px;
         border: 0;
         border-radius: 999px;
         background: transparent;
@@ -66,15 +69,13 @@
       }
 
       .info-button {
-        top: clamp(24px, 4vh, 42px);
-        left: clamp(22px, 5vw, 56px);
-        width: 18px;
-        height: 18px;
+        top: max(12px, calc(var(--safe-top) + 10px));
+        left: max(12px, calc(var(--safe-left) + clamp(12px, 3.8vw, 44px)));
       }
 
       .tune-button {
-        top: clamp(19px, 4vh, 37px);
-        right: clamp(18px, 5vw, 54px);
+        top: max(8px, calc(var(--safe-top) + 6px));
+        right: max(10px, calc(var(--safe-right) + clamp(10px, 3.8vw, 42px)));
       }
 
       .tune-button span {
@@ -369,7 +370,29 @@
           <div class="thought-cloud" aria-live="polite">
             <span class="thought-cloud-text">Нужно позвонить маме</span>
           </div>
-          <div class="thought-stream" aria-hidden="true"></div>
+          <div class="thought-stream" aria-hidden="true">
+            <svg class="thought-stream-svg" viewBox="0 0 100 420" preserveAspectRatio="none" focusable="false">
+              <defs>
+                <linearGradient id="thoughtBeamGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="rgba(229, 253, 255, 0.78)" />
+                  <stop offset="42%" stop-color="rgba(126, 220, 255, 0.52)" />
+                  <stop offset="100%" stop-color="rgba(92, 176, 235, 0.12)" />
+                </linearGradient>
+              </defs>
+              <path
+                class="thought-thread thought-thread-aura"
+                d="M54 4 C34 118 40 285 51 416"
+              />
+              <path
+                class="thought-thread thought-thread-glow"
+                d="M54 4 C34 118 40 285 51 416"
+              />
+              <path
+                class="thought-thread thought-thread-core"
+                d="M54 4 C34 118 40 285 51 416"
+              />
+            </svg>
+          </div>
           <div class="release-trail" aria-hidden="true"></div>
         </div>
 

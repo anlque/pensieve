@@ -56,6 +56,7 @@ button {
 .app-shell {
   min-height: 100vh;
   min-height: 100svh;
+  min-height: 100dvh;
   padding: 0;
 }
 
@@ -64,8 +65,13 @@ button {
   width: 100vw;
   height: 100vh;
   height: 100svh;
-  min-height: 620px;
+  height: 100dvh;
+  min-height: 100svh;
   overflow: hidden;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
   --stage-glow: rgba(55, 119, 154, 0.16);
   --stage-bottom-glow: rgba(8, 58, 83, 0.42);
   --forest-opacity: 0.8;
@@ -168,8 +174,8 @@ button {
   z-index: 9;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -194,18 +200,27 @@ button {
 }
 
 .info-button {
-  top: clamp(24px, 4vh, 42px);
-  left: clamp(22px, 5vw, 56px);
+  top: max(12px, calc(var(--safe-top) + 10px));
+  left: max(12px, calc(var(--safe-left) + clamp(12px, 3.8vw, 44px)));
   font-family: Georgia, serif;
-  font-size: 16px;
+  font-size: 0;
+}
+
+.info-button::before {
+  content: "i";
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
   border: 1px solid rgba(220, 239, 255, 0.7);
-  width: 18px;
-  height: 18px;
+  border-radius: 999px;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .tune-button {
-  top: clamp(19px, 4vh, 37px);
-  right: clamp(18px, 5vw, 54px);
+  top: max(8px, calc(var(--safe-top) + 6px));
+  right: max(10px, calc(var(--safe-right) + clamp(10px, 3.8vw, 42px)));
   gap: 3px;
 }
 
@@ -237,14 +252,26 @@ button {
   pointer-events: none;
 }
 
+.is-mixing .info-button {
+  top: max(12px, calc(var(--safe-top) + 10px));
+  bottom: auto;
+  left: max(12px, calc(var(--safe-left) + clamp(12px, 3.8vw, 44px)));
+  z-index: 44;
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .wallpaper-menu {
   position: absolute;
-  top: clamp(58px, 8vh, 82px);
-  right: clamp(18px, 5vw, 54px);
+  top: max(56px, calc(var(--safe-top) + 54px));
+  right: max(12px, calc(var(--safe-right) + clamp(12px, 3.8vw, 42px)));
   z-index: 30;
   display: grid;
   gap: 8px;
   width: min(230px, calc(100vw - 38px));
+  max-height: calc(100svh - max(56px, calc(var(--safe-top) + 54px)) - max(14px, var(--safe-bottom)));
+  overflow: auto;
+  overscroll-behavior: contain;
   padding: 12px;
   border: 1px solid rgba(177, 226, 255, 0.2);
   border-radius: 8px;
@@ -303,7 +330,7 @@ button {
   display: grid;
   place-items: center;
   min-width: 38px;
-  min-height: 30px;
+  min-height: 34px;
   padding: 4px 9px;
   border: 1px solid rgba(169, 224, 255, 0.22);
   border-radius: 999px;
@@ -337,7 +364,7 @@ button {
   grid-template-columns: 36px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
-  min-height: 42px;
+  min-height: 44px;
   padding: 6px 8px;
   border: 1px solid transparent;
   border-radius: 7px;
@@ -594,8 +621,13 @@ button {
 }
 
 .screen-capture {
-  --thought-anchor-x: min(92px, 14vw);
-  --thought-stream-x: min(50px, 8vw);
+  --wand-light-x: var(--measured-wand-light-x, calc(50% + min(192px, 18vw)));
+  --wand-light-y: var(--measured-wand-light-y, clamp(356px, 54vh, 444px));
+  --thought-cloud-offset-x: -12px;
+  --thought-stream-left: var(--measured-thought-stream-left, calc(50% + min(120px, 12vw)));
+  --thought-stream-top: var(--measured-thought-stream-top, clamp(90px, calc(11vh + 18px), 122px));
+  --thought-stream-width: var(--measured-thought-stream-width, 96px);
+  --thought-stream-height: var(--measured-thought-stream-height, clamp(310px, 48vh, 390px));
   opacity: 0;
   transform: translateY(16px);
   visibility: hidden;
@@ -759,7 +791,6 @@ button {
   --orbit-duration: 16s;
   --mixing-radius-x: 180px;
   --mixing-radius-y: 72px;
-  --mixing-orbit-scale: 1;
   --mixing-angle: 0deg;
   --mixing-orbit-duration: 16s;
   --mixing-phase-delay: var(--thought-delay);
@@ -1261,8 +1292,8 @@ button {
   transform-origin: 50% 50%;
   transform:
     translate3d(
-      calc(-50% + cos(var(--mixing-angle)) * var(--mixing-radius-x) * var(--mixing-orbit-scale)),
-      calc(-50% + sin(var(--mixing-angle)) * var(--mixing-radius-y) * var(--mixing-orbit-scale)),
+      calc(-50% + cos(var(--mixing-angle)) * var(--mixing-radius-x) * var(--mixing-orbit-scale, 1)),
+      calc(-50% + sin(var(--mixing-angle)) * var(--mixing-radius-y) * var(--mixing-orbit-scale, 1)),
       0
     )
     scale(calc(var(--thought-scale) * 1.04));
@@ -1387,11 +1418,11 @@ button {
 
 .back-button {
   position: absolute;
-  top: clamp(62px, 9vh, 92px);
-  left: clamp(18px, 5vw, 54px);
+  top: max(50px, calc(var(--safe-top) + 46px));
+  left: max(12px, calc(var(--safe-left) + clamp(12px, 3.8vw, 42px)));
   z-index: 12;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -1418,11 +1449,11 @@ button {
   position: absolute;
   top: auto;
   left: auto;
-  right: clamp(18px, 5vw, 54px);
+  right: max(12px, calc(var(--safe-right) + clamp(12px, 3.8vw, 42px)));
   z-index: 12;
   min-width: 126px;
-  min-height: 34px;
-  padding: 8px 16px;
+  min-height: 40px;
+  padding: 10px 16px;
   border: 1px solid rgba(169, 224, 255, 0.3);
   border-radius: 999px;
   background:
@@ -1521,8 +1552,8 @@ button {
 }
 
 .mix-close-button {
-  top: clamp(22px, 4vh, 42px);
-  right: clamp(22px, 5vw, 56px);
+  top: max(12px, calc(var(--safe-top) + 10px));
+  right: max(12px, calc(var(--safe-right) + clamp(12px, 3.8vw, 42px)));
   opacity: 0;
   transform: translateY(-8px) scale(0.94);
   pointer-events: none;
@@ -1552,11 +1583,11 @@ button {
 
 .thought-form {
   position: absolute;
-  top: clamp(40px, 7vh, 78px);
+  top: max(42px, calc(var(--safe-top) + clamp(34px, 6vh, 70px)));
   left: 50%;
   z-index: 10;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 34px;
+  grid-template-columns: minmax(0, 1fr) 42px;
   align-items: center;
   gap: 8px;
   width: min(340px, calc(100% - 112px));
@@ -1590,8 +1621,8 @@ button {
   position: relative;
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 42px;
+  height: 42px;
   border: 1px solid rgba(156, 221, 255, 0.46);
   border-radius: 999px;
   background: rgba(4, 17, 27, 0.56);
@@ -1643,7 +1674,7 @@ button {
 
 .wand-hand {
   position: absolute;
-  top: clamp(42px, 8vh, 84px);
+  top: clamp(18px, 4.6vh, 48px);
   left: calc(50% + min(34px, 6vw));
   right: auto;
   z-index: 6;
@@ -1711,8 +1742,8 @@ button {
 
 .thought-cloud {
   position: absolute;
-  left: calc(50% + var(--thought-anchor-x));
-  top: clamp(356px, 54vh, 444px);
+  left: calc(var(--wand-light-x) + var(--thought-cloud-offset-x));
+  top: var(--wand-light-y);
   z-index: 7;
   display: grid;
   place-items: center;
@@ -1733,7 +1764,7 @@ button {
   text-align: center;
   overflow-wrap: anywhere;
   opacity: 0;
-  transform: translateX(-50%) scale(0.28);
+  transform: translate(-50%, -50%) scale(0.28);
   transition:
     opacity 320ms ease,
     transform 520ms cubic-bezier(0.2, 0.7, 0.2, 1),
@@ -1772,7 +1803,7 @@ button {
 
 .has-draft-thought:not(.is-releasing) .thought-cloud {
   opacity: 0;
-  transform: translateX(-50%) scale(0.28);
+  transform: translate(-50%, -50%) scale(0.28);
 }
 
 .is-releasing .thought-cloud {
@@ -1783,19 +1814,14 @@ button {
 
 .thought-stream {
   position: absolute;
-  left: 50%;
-  top: clamp(72px, 11vh, 104px);
+  left: var(--thought-stream-left);
+  top: var(--thought-stream-top);
   z-index: 4;
-  width: 88px;
-  height: clamp(310px, 48vh, 390px);
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(214, 250, 255, 0.74) 0 2px, transparent 5px),
-    radial-gradient(circle at 44% 34%, rgba(118, 214, 255, 0.44) 0 2px, transparent 5px),
-    radial-gradient(circle at 58% 70%, rgba(118, 214, 255, 0.38) 0 2px, transparent 5px);
-  filter: blur(0.2px);
+  width: var(--thought-stream-width);
+  height: var(--thought-stream-height);
+  filter: drop-shadow(0 0 9px rgba(106, 214, 255, 0.22));
   opacity: 0;
-  transform: translateX(-50%) rotate(-24deg) scaleY(0.74);
+  transform: scaleY(0.74);
   transform-origin: 50% 0;
   transition:
     opacity 420ms ease,
@@ -1803,40 +1829,49 @@ button {
   pointer-events: none;
 }
 
-.thought-stream::before {
-  content: "";
+.thought-stream-svg {
   position: absolute;
-  left: 50%;
-  top: 0;
-  width: 36px;
+  inset: 0;
+  width: 100%;
   height: 100%;
-  border-left: 1px solid rgba(174, 232, 255, 0.42);
-  border-radius: 50%;
-  filter:
-    blur(0.1px)
-    drop-shadow(0 0 9px rgba(118, 217, 255, 0.4));
-  transform: translateX(-50%);
-  animation: streamCurl 3.4s ease-in-out infinite alternate;
+  overflow: visible;
 }
 
-.thought-stream::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: 28px;
-  height: 100%;
-  border-radius: 50%;
-  background:
-    radial-gradient(ellipse at 50% 50%, rgba(108, 206, 255, 0.1), transparent 62%),
-    linear-gradient(180deg, transparent, rgba(108, 206, 255, 0.06), transparent);
+.thought-thread {
+  fill: none;
+  stroke-linecap: butt;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.thought-thread-aura {
+  stroke: rgba(72, 185, 255, 0.15);
+  stroke-width: 20;
   filter: blur(9px);
-  transform: translateX(-50%);
+  animation: magicBeamBreathe 4.8s ease-in-out infinite;
+}
+
+.thought-thread-glow {
+  stroke: url("#thoughtBeamGradient");
+  stroke-width: 9;
+  filter:
+    blur(2px)
+    drop-shadow(0 0 10px rgba(130, 220, 255, 0.36));
+  opacity: 0.58;
+  animation: magicBeamBreathe 3.6s ease-in-out infinite reverse;
+}
+
+.thought-thread-core {
+  stroke: rgba(229, 253, 255, 0.76);
+  stroke-width: 2.1;
+  filter: drop-shadow(0 0 6px rgba(190, 242, 255, 0.48));
+  opacity: 0.78;
+  animation: magicBeamCore 2.8s ease-in-out infinite;
 }
 
 .has-draft-thought:not(.is-releasing) .thought-stream {
-  opacity: 0.86;
-  transform: translateX(-50%) rotate(-24deg) scaleY(1);
+  opacity: 0.76;
+  transform: scaleY(1);
 }
 
 .is-releasing .thought-stream {
@@ -1844,10 +1879,14 @@ button {
   transition: none;
 }
 
+.is-clearing-thread .thought-stream {
+  transition: none;
+}
+
 .release-trail {
   position: absolute;
-  left: calc(50% + var(--thought-stream-x));
-  top: clamp(336px, 50vh, 414px);
+  left: var(--wand-light-x);
+  top: var(--wand-light-y);
   z-index: 5;
   width: 112px;
   height: 190px;
@@ -1902,7 +1941,7 @@ button {
   z-index: 36;
   display: grid;
   place-items: center;
-  padding: 26px;
+  padding: max(18px, var(--safe-top)) max(18px, var(--safe-right)) max(18px, var(--safe-bottom)) max(18px, var(--safe-left));
   opacity: 0;
   visibility: hidden;
   background:
@@ -1927,6 +1966,9 @@ button {
 .info-dialog-content {
   position: relative;
   width: min(420px, 84vw);
+  max-height: calc(100svh - max(36px, calc(var(--safe-top) + var(--safe-bottom) + 28px)));
+  overflow: auto;
+  overscroll-behavior: contain;
   padding: 28px 28px 26px;
   border: 1px solid rgba(184, 232, 255, 0.24);
   border-radius: 8px;
@@ -1998,7 +2040,7 @@ button {
   z-index: 38;
   display: grid;
   place-items: center;
-  padding: 28px;
+  padding: max(18px, var(--safe-top)) max(18px, var(--safe-right)) max(18px, var(--safe-bottom)) max(18px, var(--safe-left));
   opacity: 0;
   visibility: hidden;
   background:
@@ -2131,6 +2173,9 @@ button {
   display: grid;
   justify-items: center;
   gap: 18px;
+  max-height: calc(100svh - max(56px, calc(var(--safe-top) + var(--safe-bottom) + 40px)));
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .thought-edit-form {
@@ -2216,10 +2261,6 @@ button {
 .thought-delete-button:focus-visible {
   border-color: rgba(255, 195, 211, 0.68) !important;
   color: rgba(255, 235, 241, 0.96) !important;
-}
-
-.just-released .water-surface {
-  animation: bowlAfterglow 780ms ease-out both;
 }
 
 .is-clearing-thoughts .pensieve-thought {
@@ -2544,13 +2585,13 @@ button {
 
   82% {
     opacity: 0.48;
-    transform: translate3d(calc(-50% - var(--thought-anchor-x)), 156px, 0) scale(0.34);
+    transform: translate3d(calc(-50% + var(--thought-release-target-x, -92px)), var(--thought-release-target-y, 156px), 0) scale(0.34);
     filter: brightness(1.62) blur(1.2px);
   }
 
   100% {
     opacity: 0;
-    transform: translate3d(calc(-50% - var(--thought-anchor-x)), 192px, 0) scale(0.12);
+    transform: translate3d(calc(-50% + var(--thought-release-target-x, -92px)), var(--thought-release-target-y, 192px), 0) scale(0.12);
     filter: brightness(1.9) blur(2.8px);
   }
 }
@@ -2741,50 +2782,36 @@ button {
   }
 }
 
-@keyframes streamCurl {
-  from {
-    opacity: 0.42;
-    transform: translateX(-50%) scaleX(0.72);
+@keyframes magicBeamBreathe {
+  0%,
+  100% {
+    opacity: 0.5;
   }
 
-  to {
-    opacity: 0.94;
-    transform: translateX(-50%) scaleX(1.12);
+  50% {
+    opacity: 0.72;
   }
 }
 
-@keyframes threadCondense {
-  0% {
-    opacity: 0.86;
-    transform: translateX(-50%) rotate(-24deg) scaleY(1);
-    filter: blur(0.2px) brightness(1);
-  }
-
-  45% {
-    opacity: 0.46;
-    transform: translateX(-44%) translateY(54px) rotate(-22deg) scaleY(0.86) scaleX(0.94);
-    filter: blur(1.4px) brightness(1.18);
-  }
-
-  76% {
-    opacity: 0.16;
-    transform: translateX(-30%) translateY(112px) rotate(-18deg) scaleY(0.52) scaleX(0.72);
-    filter: blur(3.2px) brightness(1.42);
-  }
-
+@keyframes magicBeamCore {
+  0%,
   100% {
-    opacity: 0;
-    transform: translateX(-20%) translateY(146px) rotate(-14deg) scaleY(0.28) scaleX(0.56);
-    filter: blur(5px) brightness(1.7);
+    opacity: 0.64;
+    stroke-width: 1.9;
+  }
+
+  50% {
+    opacity: 0.82;
+    stroke-width: 2.5;
   }
 }
 
 @media (max-height: 720px) {
   .hero-copy {
-    padding-top: 86px;
+    padding-top: max(76px, calc(var(--safe-top) + 62px));
   }
 
-  .pensieve-scene {
+  .app-stage:not(.is-capturing):not(.is-mixing) .pensieve-scene {
     bottom: 136px;
   }
 
@@ -2793,23 +2820,27 @@ button {
   }
 
   .thought-cloud {
-    top: 330px;
+    top: var(--wand-light-y);
   }
 
   .thought-stream {
-    top: 72px;
-    height: 345px;
+    top: var(--thought-stream-top);
+    height: var(--thought-stream-height);
   }
 
   .wand-hand {
-    top: 54px;
+    top: 38px;
   }
 }
 
 @media (max-width: 860px) {
   .screen-capture {
-    --thought-anchor-x: min(62px, 12vw);
-    --thought-stream-x: min(34px, 7vw);
+    --wand-light-x: var(--measured-wand-light-x, calc(50% + min(112px, 14vw)));
+    --wand-light-y: var(--measured-wand-light-y, clamp(332px, 45vh, 410px));
+    --thought-stream-left: var(--measured-thought-stream-left, calc(50% + min(72px, 10vw)));
+    --thought-stream-top: var(--measured-thought-stream-top, clamp(92px, calc(9vh + 18px), 116px));
+    --thought-stream-width: var(--measured-thought-stream-width, 96px);
+    --thought-stream-height: var(--measured-thought-stream-height, clamp(250px, 36vh, 330px));
   }
 
   .wand-hand {
@@ -2830,94 +2861,306 @@ button {
     top: 86.8%;
   }
 
+  .is-mixing .pensieve-scene {
+    width: min(760px, 94vw);
+  }
+
   .is-mixing .pensieve-thoughts {
-    --mixing-orbit-scale: 0.84;
+    --mixing-orbit-scale: 0.46;
+  }
+
+  .is-capturing:not(.is-mixing) .info-button {
+    top: auto;
+    bottom: max(18px, calc(var(--safe-bottom) + 14px));
+    left: max(14px, calc(var(--safe-left) + 12px));
+  }
+
+  .is-capturing:not(.is-mixing) .tune-button {
+    top: auto;
+    bottom: max(18px, calc(var(--safe-bottom) + 14px));
+    right: max(14px, calc(var(--safe-right) + 12px));
+  }
+
+  .is-capturing:not(.is-mixing) .wallpaper-menu {
+    top: auto;
+    right: max(12px, calc(var(--safe-right) + 12px));
+    bottom: max(68px, calc(var(--safe-bottom) + 62px));
+    max-height: min(420px, calc(100svh - 96px - var(--safe-top) - var(--safe-bottom)));
+    transform-origin: 100% 100%;
   }
 }
 
 @media (max-width: 520px) {
   .screen-capture {
-    --thought-anchor-x: min(42px, 11vw);
-    --thought-stream-x: min(24px, 6vw);
+    --wand-light-x: var(--measured-wand-light-x, calc(50% + 44px));
+    --wand-light-y: var(--measured-wand-light-y, max(260px, calc(var(--safe-top) + 236px)));
+    --thought-cloud-offset-x: -10px;
+    --thought-stream-left: var(--measured-thought-stream-left, calc(50% - 12px));
+    --thought-stream-top: var(--measured-thought-stream-top, max(100px, calc(var(--safe-top) + 86px)));
+    --thought-stream-width: var(--measured-thought-stream-width, 88px);
+    --thought-stream-height: var(--measured-thought-stream-height, min(236px, 39vh));
+  }
+
+  .hero-copy {
+    padding-top: max(82px, calc(var(--safe-top) + 68px));
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(38px, 12vw, 50px);
+  }
+
+  .hero-copy p {
+    margin-top: 20px;
+    font-size: 15px;
+  }
+
+  .app-stage:not(.is-capturing):not(.is-mixing) .pensieve-scene {
+    bottom: clamp(174px, 34vh, 216px);
+    width: min(360px, 84vw);
+  }
+
+  .primary-action {
+    bottom: max(22px, calc(var(--safe-bottom) + 18px));
+    gap: 10px;
+  }
+
+  .wand-button {
+    width: 84px;
+    height: 84px;
+  }
+
+  .primary-action p {
+    font-size: 14px;
+  }
+
+  .thought-form {
+    top: max(48px, calc(var(--safe-top) + 42px));
+    width: min(340px, calc(100% - 48px));
+  }
+
+  .back-button {
+    top: max(104px, calc(var(--safe-top) + 94px));
   }
 
   .is-capturing .pensieve-scene {
-    bottom: clamp(52px, 9vh, 78px);
-    width: min(420px, 96vw);
+    bottom: max(84px, calc(var(--safe-bottom) + 78px));
+    width: min(390px, 92vw);
   }
 
   .wand-hand {
-    top: clamp(58px, 9vh, 72px);
-    left: calc(50% - min(70px, 18vw));
-    width: min(520px, 112vw);
+    top: max(54px, calc(var(--safe-top) + 42px));
+    left: calc(50% - min(36px, 10vw));
+    width: min(430px, 96vw);
     aspect-ratio: 3 / 2;
   }
 
   .thought-cloud {
-    top: clamp(314px, 51vh, 374px);
-    width: min(132px, 43%);
-    min-height: 86px;
-    padding: 20px 16px;
-    font-size: 14px;
+    width: min(124px, 38%);
+    min-height: 78px;
+    padding: 17px 14px;
+    font-size: 13px;
   }
 
-  .thought-stream {
-    top: 74px;
-    height: min(360px, 54vh);
+  .is-capturing:not(.is-mixing) .info-button {
+    top: auto;
+    bottom: max(18px, calc(var(--safe-bottom) + 14px));
+    left: max(14px, calc(var(--safe-left) + 12px));
+  }
+
+  .is-capturing:not(.is-mixing) .tune-button {
+    top: auto;
+    bottom: max(18px, calc(var(--safe-bottom) + 14px));
+    right: max(14px, calc(var(--safe-right) + 12px));
+  }
+
+  .is-capturing:not(.is-mixing) .wallpaper-menu {
+    top: auto;
+    right: max(12px, calc(var(--safe-right) + 12px));
+    bottom: max(68px, calc(var(--safe-bottom) + 62px));
+    max-height: min(360px, calc(100svh - 96px - var(--safe-top) - var(--safe-bottom)));
+    transform-origin: 100% 100%;
   }
 
   .let-go-button,
   .mix-button {
-    right: 14px;
+    right: max(12px, calc(var(--safe-right) + 12px));
     min-width: 116px;
-    min-height: 32px;
-    padding: 8px 12px;
+    min-height: 40px;
+    padding: 9px 12px;
     font-size: 12px;
   }
 
   .let-go-button {
-    top: clamp(318px, 48vh, 356px);
+    top: max(102px, calc(var(--safe-top) + 92px));
   }
 
   .mix-button {
-    top: clamp(358px, calc(48vh + 40px), 396px);
+    top: max(146px, calc(var(--safe-top) + 136px));
   }
 
   .is-mixing .pensieve-scene {
-    width: min(780px, 148vw);
+    bottom: 50%;
+    width: min(560px, 92vw);
+    transform: translate(-50%, 50%);
   }
 
   .is-mixing .pensieve-thoughts {
-    --mixing-orbit-scale: 0.68;
+    --mixing-orbit-scale: 0.26;
   }
 
   .is-mixing .pensieve-thought {
-    width: clamp(76px, 22vw, 98px);
-    min-height: 50px;
+    width: clamp(70px, 20vw, 88px);
+    min-height: 46px;
+  }
+
+  .is-mixing .info-button {
+    top: max(12px, calc(var(--safe-top) + 10px));
+    bottom: auto;
+    left: max(12px, calc(var(--safe-left) + 12px));
   }
 }
 
 @media (max-width: 390px) and (max-height: 720px) {
+  .app-stage:not(.is-capturing):not(.is-mixing) .pensieve-scene {
+    bottom: clamp(166px, 33vh, 196px);
+    width: min(330px, 82vw);
+  }
+
   .is-capturing .pensieve-scene {
-    bottom: 54px;
+    bottom: max(78px, calc(var(--safe-bottom) + 72px));
+    width: min(350px, 90vw);
   }
 
   .let-go-button {
-    top: 306px;
+    top: max(92px, calc(var(--safe-top) + 82px));
   }
 
   .mix-button {
-    top: 344px;
+    top: max(136px, calc(var(--safe-top) + 126px));
   }
 
   .wand-hand {
-    top: 56px;
-    left: calc(50% - 78px);
-    width: 430px;
+    top: max(52px, calc(var(--safe-top) + 42px));
+    left: calc(50% - 38px);
+    width: min(390px, 100vw);
+  }
+
+  .thought-cloud {
+    width: min(116px, 36%);
+    min-height: 74px;
+    padding: 15px 12px;
+    font-size: 12px;
+  }
+
+  .screen-capture {
+    --thought-stream-height: var(--measured-thought-stream-height, min(208px, 36vh));
   }
 
   .is-mixing .pensieve-thoughts {
-    --mixing-orbit-scale: 0.6;
+    --mixing-orbit-scale: 0.23;
+  }
+
+  .is-mixing .pensieve-scene {
+    width: min(510px, 90vw);
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .screen-capture {
+    --wand-light-x: var(--measured-wand-light-x, 60%);
+    --wand-light-y: var(--measured-wand-light-y, max(132px, 37vh));
+    --thought-stream-left: var(--measured-thought-stream-left, 54%);
+    --thought-stream-top: var(--measured-thought-stream-top, max(70px, calc(var(--safe-top) + 58px)));
+    --thought-stream-width: var(--measured-thought-stream-width, 96px);
+    --thought-stream-height: var(--measured-thought-stream-height, min(230px, 54vh));
+  }
+
+  .hero-copy {
+    justify-items: start;
+    padding-top: max(56px, calc(var(--safe-top) + 42px));
+    padding-left: max(34px, calc(var(--safe-left) + 24px));
+    text-align: left;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(32px, 6.8vh, 42px);
+  }
+
+  .hero-copy p {
+    margin-top: 14px;
+    font-size: 14px;
+  }
+
+  .app-stage:not(.is-capturing):not(.is-mixing) .pensieve-scene {
+    left: 43%;
+    bottom: max(28px, calc(var(--safe-bottom) + 18px));
+    width: min(360px, 42vw);
+  }
+
+  .primary-action {
+    left: 74%;
+    bottom: max(26px, calc(var(--safe-bottom) + 16px));
+    width: min(220px, 32vw);
+    gap: 9px;
+  }
+
+  .wand-button {
+    width: 72px;
+    height: 72px;
+  }
+
+  .primary-action p {
+    font-size: 13px;
+  }
+
+  .thought-form {
+    top: max(16px, calc(var(--safe-top) + 10px));
+    width: min(340px, calc(100% - 188px));
+  }
+
+  .back-button {
+    top: max(12px, calc(var(--safe-top) + 8px));
+  }
+
+  .is-capturing .pensieve-scene {
+    left: 42%;
+    bottom: max(18px, calc(var(--safe-bottom) + 12px));
+    width: min(390px, 48vw);
+  }
+
+  .wand-hand {
+    top: max(24px, calc(var(--safe-top) + 16px));
+    left: 48%;
+    width: min(390px, 52vw);
+  }
+
+  .thought-cloud {
+    width: min(126px, 22vw);
+    min-height: 78px;
+    padding: 16px 14px;
+    font-size: 13px;
+  }
+
+  .thought-stream {
+    height: var(--thought-stream-height);
+  }
+
+  .let-go-button {
+    top: max(68px, calc(var(--safe-top) + 58px));
+  }
+
+  .mix-button {
+    top: max(112px, calc(var(--safe-top) + 102px));
+  }
+
+  .is-mixing .pensieve-scene {
+    bottom: 50%;
+    width: min(520px, 82vw);
+    transform: translate(-50%, 50%);
+  }
+
+  .is-mixing .pensieve-thoughts {
+    --mixing-orbit-scale: 0.38;
   }
 }
 

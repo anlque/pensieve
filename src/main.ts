@@ -29,6 +29,11 @@ const completionScreen = document.querySelector<HTMLElement>('.completion-screen
 const thoughtCloudText = document.querySelector<HTMLElement>('.thought-cloud-text');
 const thoughtCloud = document.querySelector<HTMLElement>('.thought-cloud');
 const thoughtStream = document.querySelector<HTMLElement>('.thought-stream');
+const thoughtStreamSvg = document.querySelector<SVGSVGElement>('.thought-stream-svg');
+const thoughtThreadPaths = Array.from(document.querySelectorAll<SVGPathElement>('.thought-thread'));
+let thoughtThreadLength = 0;
+let thoughtThreadClearFrame = 0;
+let hadDraftThought = false;
 const releaseTrail = document.querySelector<HTMLElement>('.release-trail');
 const wandHand = document.querySelector<HTMLElement>('.wand-hand');
 const wandLight = document.querySelector<HTMLElement>('.wand-light');
@@ -845,9 +850,126 @@ const fadeBetween = (progress: number, start: number, end: number) => {
   return amount * amount * (3 - 2 * amount);
 };
 
-const resetReleaseStyles = () => {
+const setThoughtThreadErase = (amount: number, direction: 'release' | 'clear' = 'release') => {
+  thoughtThreadPaths.forEach((path) => {
+    const length = thoughtThreadLength || path.getTotalLength();
+    const offset = direction === 'release' ? -amount * length : amount * length;
+    path.style.strokeDasharray = `${length.toFixed(2)} ${length.toFixed(2)}`;
+    path.style.strokeDashoffset = `${offset.toFixed(2)}`;
+  });
+};
+
+const clearThoughtThreadErase = () => {
+  thoughtThreadPaths.forEach((path) => {
+    path.style.strokeDasharray = '';
+    path.style.strokeDashoffset = '';
+  });
+};
+
+const resetReleaseStyles = ({ keepThreadErased = false } = {}) => {
+  window.cancelAnimationFrame(thoughtThreadClearFrame);
+  stage?.classList.remove('is-clearing-thread');
+
   [thoughtCloud, thoughtStream, releaseTrail, wandHand, wandLight].forEach((element) => {
     element?.removeAttribute('style');
+  });
+
+  if (keepThreadErased) {
+    setThoughtThreadErase(1);
+    return;
+  }
+
+  clearThoughtThreadErase();
+};
+
+const animateThoughtThreadClear = () => {
+  window.cancelAnimationFrame(thoughtThreadClearFrame);
+  updateWandLightAnchor();
+  stage?.classList.add('is-clearing-thread');
+
+  const startedAt = window.performance.now();
+  const durationMs = 380;
+
+  const step = (now: number) => {
+    const progress = clamp((now - startedAt) / durationMs, 0, 1);
+    const erase = easeInOut(progress);
+    const fade = fadeBetween(progress, 0.62, 1);
+
+    if (thoughtStream) {
+      thoughtStream.style.opacity = String(0.72 * (1 - fade));
+      thoughtStream.style.transform = 'scaleY(1)';
+      thoughtStream.style.filter = `blur(${mix(0.2, 1.05, erase).toFixed(2)}px) brightness(${mix(1.08, 0.92, fade).toFixed(2)})`;
+    }
+
+    setThoughtThreadErase(erase, 'clear');
+
+    if (progress < 1) {
+      thoughtThreadClearFrame = window.requestAnimationFrame(step);
+      return;
+    }
+
+    stage?.classList.remove('is-clearing-thread');
+    thoughtStream?.removeAttribute('style');
+    setThoughtThreadErase(1, 'clear');
+  };
+
+  thoughtThreadClearFrame = window.requestAnimationFrame(step);
+};
+
+const updateWandLightAnchor = () => {
+  if (!stage || !wandLight) {
+    return null;
+  }
+
+  const stageRect = stage.getBoundingClientRect();
+  const lightRect = wandLight.getBoundingClientRect();
+  const lightX = lightRect.left + lightRect.width / 2 - stageRect.left;
+  const lightY = lightRect.top + lightRect.height / 2 - stageRect.top;
+  const inputRect = thoughtInput?.getBoundingClientRect() ?? thoughtForm?.getBoundingClientRect();
+  const streamStartX = inputRect ? inputRect.left + inputRect.width / 2 - stageRect.left : lightX;
+  const streamStartY = inputRect ? inputRect.bottom - stageRect.top + 2 : lightY - 230;
+  const streamPad = 28;
+  const streamLeft = Math.min(streamStartX, lightX) - streamPad;
+  const streamTop = Math.min(streamStartY, lightY) - streamPad;
+  const streamWidth = Math.max(Math.abs(lightX - streamStartX) + streamPad * 2, 56);
+  const streamHeight = Math.max(Math.abs(lightY - streamStartY) + streamPad * 2, 120);
+  const startX = streamStartX - streamLeft;
+  const startY = streamStartY - streamTop;
+  const endX = lightX - streamLeft;
+  const endY = lightY - streamTop;
+  const deltaX = endX - startX;
+  const deltaY = endY - startY;
+  const beamPath = [
+    `M ${startX.toFixed(2)} ${startY.toFixed(2)}`,
+    `C ${(startX + deltaX * 0.1).toFixed(2)} ${(startY + deltaY * 0.36).toFixed(2)}`,
+    `${(endX - deltaX * 0.08).toFixed(2)} ${(endY - deltaY * 0.34).toFixed(2)}`,
+    `${endX.toFixed(2)} ${endY.toFixed(2)}`,
+  ].join(' ');
+  const bowlRect = pensieveScene?.getBoundingClientRect();
+  const bowlCenterX = bowlRect ? bowlRect.left + bowlRect.width / 2 - stageRect.left : stageRect.width / 2;
+  const bowlCenterY = bowlRect ? bowlRect.top + bowlRect.height * 0.48 - stageRect.top : lightY + 190;
+
+  stage.style.setProperty('--measured-wand-light-x', `${lightX.toFixed(2)}px`);
+  stage.style.setProperty('--measured-wand-light-y', `${lightY.toFixed(2)}px`);
+  stage.style.setProperty('--measured-thought-stream-left', `${streamLeft.toFixed(2)}px`);
+  stage.style.setProperty('--measured-thought-stream-top', `${streamTop.toFixed(2)}px`);
+  stage.style.setProperty('--measured-thought-stream-width', `${streamWidth.toFixed(2)}px`);
+  stage.style.setProperty('--measured-thought-stream-height', `${streamHeight.toFixed(2)}px`);
+  stage.style.setProperty('--thought-release-target-x', `${(bowlCenterX - lightX).toFixed(2)}px`);
+  stage.style.setProperty('--thought-release-target-y', `${(bowlCenterY - lightY).toFixed(2)}px`);
+  thoughtStreamSvg?.setAttribute('viewBox', `0 0 ${streamWidth.toFixed(2)} ${streamHeight.toFixed(2)}`);
+  thoughtThreadPaths.forEach((path) => path.setAttribute('d', beamPath));
+  thoughtThreadLength = thoughtThreadPaths[0]?.getTotalLength() ?? 0;
+
+  return {
+    targetX: bowlCenterX - lightX,
+    targetY: bowlCenterY - lightY,
+  };
+};
+
+const scheduleWandLightAnchorUpdate = () => {
+  window.requestAnimationFrame(() => {
+    updateWandLightAnchor();
   });
 };
 
@@ -855,7 +977,10 @@ const animateRelease = () => {
   window.cancelAnimationFrame(releaseFrame);
 
   const startedAt = window.performance.now();
-  const anchorX = Math.min(92, window.innerWidth * 0.14);
+  const releaseTarget = updateWandLightAnchor() ?? {
+    targetX: -Math.min(92, window.innerWidth * 0.14),
+    targetY: 192,
+  };
 
   const step = (now: number) => {
     const progress = clamp((now - startedAt) / releaseDurationMs, 0, 1);
@@ -863,8 +988,8 @@ const animateRelease = () => {
     const dissolve = fadeBetween(progress, 0.7, 1);
     const birth = easeOut(fadeBetween(progress, 0, 0.3));
 
-    const cloudX = mix(42, -anchorX, travel) + Math.sin(progress * Math.PI) * 10;
-    const cloudY = mix(-8, 192, travel) - Math.sin(progress * Math.PI) * 14;
+    const cloudX = mix(-12, releaseTarget.targetX, travel) + Math.sin(progress * Math.PI) * 10;
+    const cloudY = mix(10, releaseTarget.targetY, travel) - Math.sin(progress * Math.PI) * 14;
     const cloudScale = (0.24 + birth * 0.68) * (1 - dissolve * 0.78);
     const cloudOpacity = Math.min(1, birth * 1.12) * (1 - dissolve);
     const cloudBlur = mix(6.5, 0.2, birth) + dissolve * 2.6;
@@ -878,10 +1003,9 @@ const animateRelease = () => {
     const finalHandY = mix(handY, 0, handReturn);
     const finalHandRotate = mix(handRotate, 0, handReturn);
 
-    const threadOpacity = 0.86 * Math.pow(1 - progress, 1.55);
-    const threadY = mix(0, 138, easeOut(progress));
-    const threadScaleY = mix(1, 0.34, easeOut(progress));
-    const threadBlur = mix(0.2, 5.2, progress);
+    const threadErase = easeInOut(fadeBetween(progress, 0.02, 0.18));
+    const threadOpacity = 0.66 * (1 - fadeBetween(progress, 0.2, 0.3)) * Math.pow(1 - dissolve, 0.35);
+    const threadBlur = mix(0.2, 1.2, threadErase);
 
     const trailOpacity = Math.sin(progress * Math.PI) * 0.22;
     const trailY = mix(-8, 58, travel);
@@ -891,7 +1015,7 @@ const animateRelease = () => {
 
     if (thoughtCloud) {
       thoughtCloud.style.opacity = String(cloudOpacity);
-      thoughtCloud.style.transform = `translate3d(calc(-50% + ${cloudX.toFixed(2)}px), ${cloudY.toFixed(2)}px, 0) scale(${cloudScale.toFixed(3)})`;
+      thoughtCloud.style.transform = `translate3d(calc(-50% + ${cloudX.toFixed(2)}px), calc(-50% + ${cloudY.toFixed(2)}px), 0) scale(${cloudScale.toFixed(3)})`;
       thoughtCloud.style.filter = `brightness(${cloudBrightness.toFixed(3)}) blur(${cloudBlur.toFixed(2)}px)`;
     }
 
@@ -905,8 +1029,9 @@ const animateRelease = () => {
 
     if (thoughtStream) {
       thoughtStream.style.opacity = String(threadOpacity);
-      thoughtStream.style.transform = `translateX(-50%) translateY(${threadY.toFixed(2)}px) rotate(-24deg) scaleY(${threadScaleY.toFixed(3)})`;
-      thoughtStream.style.filter = `blur(${threadBlur.toFixed(2)}px) brightness(${mix(1, 1.5, progress).toFixed(2)})`;
+      thoughtStream.style.transform = 'scaleY(1)';
+      thoughtStream.style.filter = `blur(${threadBlur.toFixed(2)}px) brightness(${mix(1, 1.18, threadErase).toFixed(2)})`;
+      setThoughtThreadErase(threadErase);
     }
 
     if (releaseTrail) {
@@ -1007,8 +1132,10 @@ const loadSavedThoughts = () => {
 
 const openCaptureScreen = () => {
   hideCompletionScreen();
+  hadDraftThought = false;
   stage?.classList.add('is-capturing');
   captureScreen?.removeAttribute('aria-hidden');
+  scheduleWandLightAnchorUpdate();
   window.setTimeout(() => thoughtInput?.focus(), 260);
   document.body.dispatchEvent(new CustomEvent('pensieve:start-thought'));
 };
@@ -1025,6 +1152,7 @@ const closeCaptureScreen = () => {
     'is-releasing',
     'just-released',
     'just-cleared',
+    'is-clearing-thread',
     'is-clearing-thoughts',
     'is-mixing',
     'has-open-thought',
@@ -1043,6 +1171,8 @@ const closeCaptureScreen = () => {
     thoughtInput.disabled = false;
   }
 
+  hadDraftThought = false;
+
   if (thoughtCloudText) {
     thoughtCloudText.textContent = t('thought.preview');
   }
@@ -1050,8 +1180,24 @@ const closeCaptureScreen = () => {
 
 const syncThoughtPreview = () => {
   const thought = thoughtInput?.value.trim() ?? '';
+  const hasThought = thought.length > 0;
+  const isReleasing = stage?.classList.contains('is-releasing') ?? false;
 
-  stage?.classList.toggle('has-draft-thought', thought.length > 0);
+  stage?.classList.toggle('has-draft-thought', hasThought);
+  updateWandLightAnchor();
+
+  if (hasThought && !isReleasing) {
+    window.cancelAnimationFrame(thoughtThreadClearFrame);
+    stage?.classList.remove('is-clearing-thread');
+    thoughtStream?.removeAttribute('style');
+    clearThoughtThreadErase();
+  }
+
+  if (!hasThought && hadDraftThought && !isReleasing) {
+    animateThoughtThreadClear();
+  }
+
+  hadDraftThought = hasThought;
 
   if (thoughtCloudText) {
     thoughtCloudText.textContent = thought || t('thought.preview');
@@ -1068,7 +1214,8 @@ const finishRelease = () => {
 
   stage?.classList.remove('is-releasing', 'has-draft-thought');
   stage?.classList.add('just-released');
-  resetReleaseStyles();
+  resetReleaseStyles({ keepThreadErased: true });
+  hadDraftThought = false;
   updateLetGoButton();
 
   if (thoughtInput) {
@@ -1345,6 +1492,8 @@ pensieveThoughts?.addEventListener('pointerdown', startThoughtDrag);
 document.addEventListener('pointermove', moveDraggedThought);
 document.addEventListener('pointerup', endDraggedThought);
 document.addEventListener('pointercancel', cancelDraggedThought);
+window.addEventListener('resize', scheduleWandLightAnchorUpdate);
+window.visualViewport?.addEventListener('resize', scheduleWandLightAnchorUpdate);
 
 thoughtForm?.addEventListener('submit', (event) => {
   event.preventDefault();
@@ -1379,6 +1528,7 @@ stage?.classList.remove(
   'just-released',
   'just-cleared',
   'is-stirring',
+  'is-clearing-thread',
   'is-clearing-thoughts',
   'is-mixing',
   'has-open-thought',
