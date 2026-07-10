@@ -1,222 +1,65 @@
 import './styles.css';
 
-const stage = document.querySelector<HTMLElement>('.app-stage');
-const wandButton = document.querySelector<HTMLButtonElement>('.wand-button');
-const backButton = document.querySelector<HTMLButtonElement>('.back-button');
-const letGoButton = document.querySelector<HTMLButtonElement>('.let-go-button');
-const mixButton = document.querySelector<HTMLButtonElement>('.mix-button');
-const mixCloseButton = document.querySelector<HTMLButtonElement>('.mix-close-button');
-const infoButton = document.querySelector<HTMLButtonElement>('.info-button');
-const infoDialog = document.querySelector<HTMLElement>('.info-dialog');
-const infoCloseButton = document.querySelector<HTMLButtonElement>('.info-close-button');
-const tuneButton = document.querySelector<HTMLButtonElement>('.tune-button');
-const wallpaperMenu = document.querySelector<HTMLElement>('.wallpaper-menu');
-const wallpaperOptions = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-wallpaper-option]'));
-const wallpaperUploadInput = document.querySelector<HTMLInputElement>('.wallpaper-upload-input');
-const languageOptions = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-language-option]'));
-const thoughtForm = document.querySelector<HTMLFormElement>('.thought-form');
-const thoughtInput = document.querySelector<HTMLInputElement>('.thought-input');
-const thoughtModal = document.querySelector<HTMLElement>('.thought-modal');
-const thoughtModalText = document.querySelector<HTMLElement>('.thought-modal-text');
-const thoughtModalClose = document.querySelector<HTMLButtonElement>('.thought-modal-close');
-const thoughtModalView = document.querySelector<HTMLElement>('.thought-modal-view');
-const thoughtEditForm = document.querySelector<HTMLFormElement>('.thought-edit-form');
-const thoughtEditInput = document.querySelector<HTMLInputElement>('.thought-edit-input');
-const thoughtEditButton = document.querySelector<HTMLButtonElement>('.thought-edit-button');
-const thoughtDeleteButton = document.querySelector<HTMLButtonElement>('.thought-delete-button');
-const thoughtCancelButton = document.querySelector<HTMLButtonElement>('.thought-cancel-button');
-const completionScreen = document.querySelector<HTMLElement>('.completion-screen');
-const thoughtCloudText = document.querySelector<HTMLElement>('.thought-cloud-text');
-const thoughtCloud = document.querySelector<HTMLElement>('.thought-cloud');
-const thoughtStream = document.querySelector<HTMLElement>('.thought-stream');
-const thoughtStreamSvg = document.querySelector<SVGSVGElement>('.thought-stream-svg');
-const thoughtThreadPaths = Array.from(document.querySelectorAll<SVGPathElement>('.thought-thread'));
+import {
+  captureScreen,
+  completionScreen,
+  infoButton,
+  infoCloseButton,
+  infoDialog,
+  languageOptions,
+  letGoButton,
+  mixButton,
+  mixCloseButton,
+  pensieveScene,
+  pensieveThoughts,
+  releaseTrail,
+  stage,
+  thoughtCancelButton,
+  thoughtCloud,
+  thoughtCloudText,
+  thoughtDeleteButton,
+  thoughtEditButton,
+  thoughtEditForm,
+  thoughtEditInput,
+  thoughtForm,
+  thoughtInput,
+  thoughtModal,
+  thoughtModalClose,
+  thoughtModalText,
+  thoughtModalView,
+  thoughtStream,
+  thoughtStreamSvg,
+  thoughtThreadPaths,
+  tuneButton,
+  wallpaperMenu,
+  wallpaperOptions,
+  wallpaperUploadInput,
+  wandButton,
+  wandHand,
+  wandLight,
+  backButton,
+} from './dom';
+import {
+  CLEAR_THOUGHTS_DURATION_MS,
+  LANGUAGE_NAMES,
+  MAX_STORED_THOUGHTS,
+  MAX_THOUGHT_LENGTH,
+  MIXING_ORBITS,
+  RELEASE_DURATION_MS,
+  STORAGE_KEYS,
+  THREAD_CLEAR_DURATION_MS,
+  THOUGHT_SURFACE_DURATION_MS,
+  THOUGHT_POSITIONS,
+  WALLPAPER_NAMES,
+  type LanguageName,
+  type WallpaperName,
+} from './config';
+import { translations, type TranslationKey } from './i18n';
+import type { DragState, PensieveThought } from './types';
+
 let thoughtThreadLength = 0;
 let thoughtThreadClearFrame = 0;
 let hadDraftThought = false;
-const releaseTrail = document.querySelector<HTMLElement>('.release-trail');
-const wandHand = document.querySelector<HTMLElement>('.wand-hand');
-const wandLight = document.querySelector<HTMLElement>('.wand-light');
-const pensieveThoughts = document.querySelector<HTMLElement>('.pensieve-thoughts');
-const captureScreen = document.querySelector<HTMLElement>('[data-screen="capture"]');
-const pensieveScene = document.querySelector<HTMLElement>('.pensieve-scene');
-const releaseDurationMs = 3000;
-const clearThoughtsDurationMs = 1980;
-const storageKey = 'pensieve.thoughts.v1';
-const wallpaperStorageKey = 'pensieve.wallpaper.v1';
-const customWallpaperStorageKey = 'pensieve.customWallpaper.v1';
-const languageStorageKey = 'pensieve.language.v1';
-const wallpaperNames = ['forest', 'moon', 'deep', 'embers', 'office', 'library', 'quidditch', 'custom'] as const;
-const languageNames = ['ru', 'en'] as const;
-
-type WallpaperName = (typeof wallpaperNames)[number];
-type LanguageName = (typeof languageNames)[number];
-
-type TranslationKey =
-  | 'app.title'
-  | 'app.description'
-  | 'info.button'
-  | 'settings.button'
-  | 'settings.wallpaper'
-  | 'settings.language'
-  | 'wallpaper.forest'
-  | 'wallpaper.moon'
-  | 'wallpaper.deep'
-  | 'wallpaper.embers'
-  | 'wallpaper.office'
-  | 'wallpaper.library'
-  | 'wallpaper.quidditch'
-  | 'wallpaper.custom'
-  | 'wallpaper.upload'
-  | 'info.close'
-  | 'info.title'
-  | 'info.summary'
-  | 'info.item.add'
-  | 'info.item.mix'
-  | 'info.item.edit'
-  | 'info.item.wallpaper'
-  | 'hero.title'
-  | 'hero.subtitle'
-  | 'back'
-  | 'thought.label'
-  | 'thought.placeholder'
-  | 'thought.submit'
-  | 'thought.preview'
-  | 'letGo'
-  | 'mix'
-  | 'mix.close'
-  | 'modal.label'
-  | 'modal.close'
-  | 'modal.actions'
-  | 'modal.edit'
-  | 'modal.delete'
-  | 'modal.editLabel'
-  | 'modal.save'
-  | 'modal.cancel'
-  | 'completion.title'
-  | 'completion.text'
-  | 'wand.button'
-  | 'home.cta';
-
-const translations: Record<LanguageName, Record<TranslationKey, string>> = {
-  ru: {
-    'app.title': 'Омут памяти',
-    'app.description': 'Омут памяти — спокойное приложение для выгрузки мыслей, их перемешивания, редактирования и отпускания.',
-    'info.button': 'Информация',
-    'settings.button': 'Настройки фона',
-    'settings.wallpaper': 'Обои',
-    'settings.language': 'Язык',
-    'wallpaper.forest': 'Лес',
-    'wallpaper.moon': 'Луна',
-    'wallpaper.deep': 'Глубина',
-    'wallpaper.embers': 'Искры',
-    'wallpaper.office': 'Кабинет',
-    'wallpaper.library': 'Библиотека',
-    'wallpaper.quidditch': 'Игровое поле',
-    'wallpaper.custom': 'Своя картинка',
-    'wallpaper.upload': 'Загрузить свою картинку для обоев',
-    'info.close': 'Закрыть информацию',
-    'info.title': 'Омут памяти',
-    'info.summary': 'Место, куда можно выгрузить мысли, чтобы стало легче.',
-    'info.item.add': 'Введи мысль и отпусти её в омут палочкой.',
-    'info.item.mix': 'Перемешай омут, чтобы рассмотреть мысли ближе.',
-    'info.item.edit': 'Открой мысль, измени её или удали.',
-    'info.item.wallpaper': 'Смени обои через настройки справа.',
-    'hero.title': 'Омут<br />памяти',
-    'hero.subtitle': 'Твои мысли важны.<br />Выгрузи их. Отпусти.',
-    back: 'Назад',
-    'thought.label': 'Мысль',
-    'thought.placeholder': 'Вытащи мысль...',
-    'thought.submit': 'Поймать мысль',
-    'thought.preview': 'Нужно позвонить маме',
-    letGo: 'Отпустить мысли',
-    mix: 'Перемешать',
-    'mix.close': 'Закрыть омут',
-    'modal.label': 'Мысль',
-    'modal.close': 'Закрыть мысль',
-    'modal.actions': 'Действия с мыслью',
-    'modal.edit': 'Изменить',
-    'modal.delete': 'Удалить',
-    'modal.editLabel': 'Редактировать мысль',
-    'modal.save': 'Сохранить',
-    'modal.cancel': 'Отмена',
-    'completion.title': 'Стало легче',
-    'completion.text': 'Мысли отпущены. Можно выдохнуть.',
-    'wand.button': 'Взять мысль палочкой',
-    'home.cta': 'Коснись и начни<br />выгружать мысли',
-  },
-  en: {
-    'app.title': 'Memory Bowl',
-    'app.description': 'Memory Bowl is a calm app for unloading, mixing, editing, and releasing thoughts.',
-    'info.button': 'Information',
-    'settings.button': 'Background settings',
-    'settings.wallpaper': 'Wallpaper',
-    'settings.language': 'Language',
-    'wallpaper.forest': 'Forest',
-    'wallpaper.moon': 'Moon',
-    'wallpaper.deep': 'Depth',
-    'wallpaper.embers': 'Embers',
-    'wallpaper.office': 'Study',
-    'wallpaper.library': 'Library',
-    'wallpaper.quidditch': 'Playing field',
-    'wallpaper.custom': 'Custom image',
-    'wallpaper.upload': 'Upload your own wallpaper image',
-    'info.close': 'Close information',
-    'info.title': 'Memory Bowl',
-    'info.summary': 'A quiet place to unload thoughts when your mind feels crowded.',
-    'info.item.add': 'Write a thought and release it into the bowl with the wand.',
-    'info.item.mix': 'Mix the bowl to look at your thoughts up close.',
-    'info.item.edit': 'Open a thought to edit it or delete it.',
-    'info.item.wallpaper': 'Change the wallpaper from the settings on the right.',
-    'hero.title': 'Memory<br />Bowl',
-    'hero.subtitle': 'Your thoughts matter.<br />Unload them. Let go.',
-    back: 'Back',
-    'thought.label': 'Thought',
-    'thought.placeholder': 'Pull out a thought...',
-    'thought.submit': 'Catch thought',
-    'thought.preview': 'Need to call mom',
-    letGo: 'Release thoughts',
-    mix: 'Mix',
-    'mix.close': 'Close bowl',
-    'modal.label': 'Thought',
-    'modal.close': 'Close thought',
-    'modal.actions': 'Thought actions',
-    'modal.edit': 'Edit',
-    'modal.delete': 'Delete',
-    'modal.editLabel': 'Edit thought',
-    'modal.save': 'Save',
-    'modal.cancel': 'Cancel',
-    'completion.title': 'A little lighter',
-    'completion.text': 'Your thoughts are released. Take a slow breath.',
-    'wand.button': 'Take a thought with the wand',
-    'home.cta': 'Touch to start<br />unloading thoughts',
-  },
-};
-
-type PensieveThought = {
-  id: number;
-  text: string;
-  x: number;
-  y: number;
-  scale: number;
-  delay: number;
-  duration: number;
-  depth: number;
-  orbitRadiusX: number;
-  orbitDuration: number;
-};
-
-type DragState = {
-  thoughtId: number;
-  element: HTMLElement;
-  ghost: HTMLElement | null;
-  pointerId: number;
-  startX: number;
-  startY: number;
-  offsetX: number;
-  offsetY: number;
-  hasMoved: boolean;
-};
 
 let releaseTimer = 0;
 let thoughtId = 0;
@@ -231,38 +74,11 @@ let selectedThoughtId: number | null = null;
 let dragState: DragState | null = null;
 let suppressThoughtClick = false;
 
-const thoughtPositions = [
-  { x: 50, y: 50 },
-  { x: 27, y: 45 },
-  { x: 72, y: 44 },
-  { x: 38, y: 66 },
-  { x: 65, y: 66 },
-  { x: 18, y: 58 },
-  { x: 82, y: 56 },
-  { x: 48, y: 74 },
-  { x: 31, y: 72 },
-];
-
-const mixingOrbits = [
-  { radiusX: 244, radiusY: 74, speed: 1 },
-  { radiusX: 206, radiusY: 92, speed: 0.94 },
-  { radiusX: 270, radiusY: 62, speed: 1.07 },
-  { radiusX: 178, radiusY: 104, speed: 0.9 },
-  { radiusX: 232, radiusY: 86, speed: 1.12 },
-  { radiusX: 154, radiusY: 68, speed: 0.86 },
-  { radiusX: 260, radiusY: 82, speed: 0.98 },
-  { radiusX: 198, radiusY: 58, speed: 1.16 },
-  { radiusX: 224, radiusY: 100, speed: 0.92 },
-  { radiusX: 136, radiusY: 50, speed: 1.04 },
-  { radiusX: 188, radiusY: 78, speed: 1.1 },
-  { radiusX: 248, radiusY: 96, speed: 0.88 },
-];
-
 const isWallpaperName = (value: string | null): value is WallpaperName =>
-  Boolean(value && wallpaperNames.includes(value as WallpaperName));
+  Boolean(value && WALLPAPER_NAMES.includes(value as WallpaperName));
 
 const isLanguageName = (value: string | null): value is LanguageName =>
-  Boolean(value && languageNames.includes(value as LanguageName));
+  Boolean(value && LANGUAGE_NAMES.includes(value as LanguageName));
 
 let currentLanguage: LanguageName = isLanguageName(document.documentElement.lang) ? document.documentElement.lang : 'ru';
 
@@ -278,7 +94,12 @@ const setText = (selector: string, key: TranslationKey) => {
 const setHtml = (selector: string, key: TranslationKey) => {
   const element = document.querySelector<HTMLElement>(selector);
   if (element) {
-    element.innerHTML = t(key);
+    const parts = t(key).split(/<br\s*\/?>/i);
+    element.replaceChildren(
+      ...parts.flatMap((part, index) =>
+        index === 0 ? [document.createTextNode(part)] : [document.createElement('br'), document.createTextNode(part)],
+      ),
+    );
   }
 };
 
@@ -352,7 +173,7 @@ const saveLanguage = (language: LanguageName) => {
   applyLanguage(language);
 
   try {
-    window.localStorage.setItem(languageStorageKey, language);
+    window.localStorage.setItem(STORAGE_KEYS.language, language);
   } catch {
     // Language preference is optional; the default copy remains usable.
   }
@@ -362,7 +183,7 @@ const loadLanguage = () => {
   let savedLanguage: string | null = null;
 
   try {
-    savedLanguage = window.localStorage.getItem(languageStorageKey);
+    savedLanguage = window.localStorage.getItem(STORAGE_KEYS.language);
   } catch {
     savedLanguage = null;
   }
@@ -440,7 +261,7 @@ const applyWallpaper = (wallpaper: WallpaperName) => {
   });
 
   try {
-    window.localStorage.setItem(wallpaperStorageKey, wallpaper);
+    window.localStorage.setItem(STORAGE_KEYS.wallpaper, wallpaper);
   } catch {
     // The selected wallpaper is optional polish; keep the app usable without storage.
   }
@@ -448,7 +269,7 @@ const applyWallpaper = (wallpaper: WallpaperName) => {
 
 const loadCustomWallpaperImage = () => {
   try {
-    const savedImage = window.localStorage.getItem(customWallpaperStorageKey);
+    const savedImage = window.localStorage.getItem(STORAGE_KEYS.customWallpaper);
 
     if (savedImage) {
       stage?.style.setProperty('--custom-wallpaper-image', `url("${savedImage}")`);
@@ -468,7 +289,7 @@ const loadWallpaper = () => {
   let savedWallpaper: string | null = null;
 
   try {
-    savedWallpaper = window.localStorage.getItem(wallpaperStorageKey);
+    savedWallpaper = window.localStorage.getItem(STORAGE_KEYS.wallpaper);
   } catch {
     savedWallpaper = null;
   }
@@ -525,7 +346,7 @@ const compressWallpaperImage = async (file: File) => {
 const saveCustomWallpaper = async (file: File) => {
   try {
     const imageUrl = await compressWallpaperImage(file);
-    window.localStorage.setItem(customWallpaperStorageKey, imageUrl);
+    window.localStorage.setItem(STORAGE_KEYS.customWallpaper, imageUrl);
     stage?.style.setProperty('--custom-wallpaper-image', `url("${imageUrl}")`);
     document.documentElement.style.setProperty('--initial-custom-wallpaper-image', `url("${imageUrl}")`);
     applyWallpaper('custom');
@@ -561,6 +382,24 @@ const createThoughtElement = (thought: PensieveThought) => {
   return item;
 };
 
+const createPensieveThought = (text: string, id: number): PensieveThought => {
+  const slot = THOUGHT_POSITIONS[id % THOUGHT_POSITIONS.length];
+  const drift = id % 5;
+
+  return {
+    id,
+    text: text.trim().slice(0, MAX_THOUGHT_LENGTH),
+    x: slot.x,
+    y: slot.y,
+    scale: 0.82 + (drift % 3) * 0.08,
+    delay: -(id % 6) * 0.65,
+    duration: 8.8 + (id % 5) * 1.1,
+    depth: 0.42 + (id % 4) * 0.16,
+    orbitRadiusX: 152 + (id % 5) * 34,
+    orbitDuration: 14 + (id % 5) * 1.8,
+  };
+};
+
 const updateThoughtInteractivity = () => {
   const isMixing = Boolean(stage?.classList.contains('is-mixing'));
   const isCapturing = Boolean(stage?.classList.contains('is-capturing'));
@@ -572,8 +411,8 @@ const updateThoughtInteractivity = () => {
 };
 
 const syncThoughtElement = (item: HTMLElement, thought: PensieveThought) => {
-  const mixingOrbit = mixingOrbits[thought.id % mixingOrbits.length];
-  const cycle = Math.floor(thought.id / mixingOrbits.length);
+  const mixingOrbit = MIXING_ORBITS[thought.id % MIXING_ORBITS.length];
+  const cycle = Math.floor(thought.id / MIXING_ORBITS.length);
   const cycleOffset = (cycle % 3) - 1;
 
   item.classList.toggle('is-surfacing', thought.id === surfacingThoughtId);
@@ -590,7 +429,7 @@ const syncThoughtElement = (item: HTMLElement, thought: PensieveThought) => {
   item.style.setProperty('--mixing-radius-x', `${mixingOrbit.radiusX + cycleOffset * 14}px`);
   item.style.setProperty('--mixing-radius-y', `${mixingOrbit.radiusY + cycleOffset * 6}px`);
   item.style.setProperty('--mixing-orbit-duration', `${thought.orbitDuration * mixingOrbit.speed}s`);
-  item.style.setProperty('--mixing-phase-delay', `${-(thought.id % mixingOrbits.length) * 1.42 - cycle * 0.76}s`);
+  item.style.setProperty('--mixing-phase-delay', `${-(thought.id % MIXING_ORBITS.length) * 1.42 - cycle * 0.76}s`);
 };
 
 const renderPensieveThoughts = () => {
@@ -627,7 +466,7 @@ const renderPensieveThoughts = () => {
 
 const saveThoughts = () => {
   try {
-    window.localStorage.setItem(storageKey, JSON.stringify(thoughts.map((thought) => thought.text)));
+    window.localStorage.setItem(STORAGE_KEYS.thoughts, JSON.stringify(thoughts.map((thought) => thought.text)));
   } catch {
     // Storage is a convenience; the app should still work without it.
   }
@@ -828,7 +667,7 @@ const startThoughtDrag = (event: PointerEvent) => {
 
 const clearSavedThoughts = () => {
   try {
-    window.localStorage.removeItem(storageKey);
+    window.localStorage.removeItem(STORAGE_KEYS.thoughts);
   } catch {
     // Storage is a convenience; the app should still work without it.
   }
@@ -888,7 +727,7 @@ const animateThoughtThreadClear = () => {
   stage?.classList.add('is-clearing-thread');
 
   const startedAt = window.performance.now();
-  const durationMs = 380;
+  const durationMs = THREAD_CLEAR_DURATION_MS;
 
   const step = (now: number) => {
     const progress = clamp((now - startedAt) / durationMs, 0, 1);
@@ -983,7 +822,7 @@ const animateRelease = () => {
   };
 
   const step = (now: number) => {
-    const progress = clamp((now - startedAt) / releaseDurationMs, 0, 1);
+    const progress = clamp((now - startedAt) / RELEASE_DURATION_MS, 0, 1);
     const travel = easeInOut(progress);
     const dissolve = fadeBetween(progress, 0.7, 1);
     const birth = easeOut(fadeBetween(progress, 0, 0.3));
@@ -1052,24 +891,11 @@ const animateRelease = () => {
 };
 
 const addThoughtToPensieve = (text: string) => {
-  const slot = thoughtPositions[thoughtId % thoughtPositions.length];
-  const drift = thoughtId % 5;
   const id = thoughtId;
 
   thoughts = [
     ...thoughts,
-    {
-      id,
-      text,
-      x: slot.x,
-      y: slot.y,
-      scale: 0.82 + (drift % 3) * 0.08,
-      delay: -(thoughtId % 6) * 0.65,
-      duration: 8.8 + (thoughtId % 5) * 1.1,
-      depth: 0.42 + (thoughtId % 4) * 0.16,
-      orbitRadiusX: 152 + (thoughtId % 5) * 34,
-      orbitDuration: 14 + (thoughtId % 5) * 1.8,
-    },
+    createPensieveThought(text, id),
   ];
 
   thoughtId += 1;
@@ -1081,12 +907,12 @@ const addThoughtToPensieve = (text: string) => {
   surfacingTimer = window.setTimeout(() => {
     surfacingThoughtId = null;
     renderPensieveThoughts();
-  }, 1700);
+  }, THOUGHT_SURFACE_DURATION_MS);
 };
 
 const loadSavedThoughts = () => {
   try {
-    const saved = window.localStorage.getItem(storageKey);
+    const saved = window.localStorage.getItem(STORAGE_KEYS.thoughts);
 
     if (!saved) {
       renderPensieveThoughts();
@@ -1102,24 +928,11 @@ const loadSavedThoughts = () => {
 
     savedTexts
       .filter((text): text is string => typeof text === 'string' && text.trim().length > 0)
-      .slice(0, 60)
+      .slice(0, MAX_STORED_THOUGHTS)
       .forEach((text) => {
-        const slot = thoughtPositions[thoughtId % thoughtPositions.length];
-        const drift = thoughtId % 5;
         thoughts = [
           ...thoughts,
-          {
-            id: thoughtId,
-            text: text.trim().slice(0, 80),
-            x: slot.x,
-            y: slot.y,
-            scale: 0.82 + (drift % 3) * 0.08,
-            delay: -(thoughtId % 6) * 0.65,
-            duration: 8.8 + (thoughtId % 5) * 1.1,
-            depth: 0.42 + (thoughtId % 4) * 0.16,
-            orbitRadiusX: 152 + (thoughtId % 5) * 34,
-            orbitDuration: 14 + (thoughtId % 5) * 1.8,
-          },
+          createPensieveThought(text, thoughtId),
         ];
         thoughtId += 1;
       });
@@ -1259,7 +1072,7 @@ const clearPensieveThoughts = () => {
     updateLetGoButton();
 
     window.setTimeout(() => stage?.classList.remove('just-cleared'), 920);
-  }, clearThoughtsDurationMs);
+  }, CLEAR_THOUGHTS_DURATION_MS);
 };
 
 const openMixingView = () => {
@@ -1350,12 +1163,14 @@ const saveEditedThought = () => {
     return;
   }
 
-  thoughts = thoughts.map((item) => (item.id === thought.id ? { ...item, text: nextText.slice(0, 80) } : item));
+  thoughts = thoughts.map((item) =>
+    item.id === thought.id ? { ...item, text: nextText.slice(0, MAX_THOUGHT_LENGTH) } : item,
+  );
   renderPensieveThoughts();
   saveThoughts();
 
   if (thoughtModalText) {
-    thoughtModalText.textContent = nextText.slice(0, 80);
+    thoughtModalText.textContent = nextText.slice(0, MAX_THOUGHT_LENGTH);
   }
 
   stopEditingThought();

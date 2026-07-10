@@ -25,8 +25,6 @@
 
       .app-shell {
         min-height: 100vh;
-        min-height: 100svh;
-        min-height: 100dvh;
         padding: 0;
       }
 
@@ -34,9 +32,7 @@
         position: relative;
         width: 100vw;
         height: 100vh;
-        height: 100svh;
-        height: 100dvh;
-        min-height: 100svh;
+        min-height: 100vh;
         overflow: hidden;
         --safe-top: env(safe-area-inset-top, 0px);
         --safe-right: env(safe-area-inset-right, 0px);
@@ -46,6 +42,27 @@
           linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.9)),
           #02070b;
         isolation: isolate;
+      }
+
+      @supports (min-height: 100svh) {
+        .app-shell {
+          min-height: 100svh;
+        }
+
+        .app-stage {
+          height: 100svh;
+          min-height: 100svh;
+        }
+      }
+
+      @supports (height: 100dvh) {
+        .app-shell {
+          min-height: 100dvh;
+        }
+
+        .app-stage {
+          height: 100dvh;
+        }
       }
 
       .screen {
