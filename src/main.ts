@@ -25,6 +25,7 @@ const thoughtEditInput = document.querySelector<HTMLInputElement>('.thought-edit
 const thoughtEditButton = document.querySelector<HTMLButtonElement>('.thought-edit-button');
 const thoughtDeleteButton = document.querySelector<HTMLButtonElement>('.thought-delete-button');
 const thoughtCancelButton = document.querySelector<HTMLButtonElement>('.thought-cancel-button');
+const completionScreen = document.querySelector<HTMLElement>('.completion-screen');
 const thoughtCloudText = document.querySelector<HTMLElement>('.thought-cloud-text');
 const thoughtCloud = document.querySelector<HTMLElement>('.thought-cloud');
 const thoughtStream = document.querySelector<HTMLElement>('.thought-stream');
@@ -87,6 +88,8 @@ type TranslationKey =
   | 'modal.editLabel'
   | 'modal.save'
   | 'modal.cancel'
+  | 'completion.title'
+  | 'completion.text'
   | 'wand.button'
   | 'home.cta';
 
@@ -132,6 +135,8 @@ const translations: Record<LanguageName, Record<TranslationKey, string>> = {
     'modal.editLabel': 'Редактировать мысль',
     'modal.save': 'Сохранить',
     'modal.cancel': 'Отмена',
+    'completion.title': 'Стало легче',
+    'completion.text': 'Мысли отпущены. Можно выдохнуть.',
     'wand.button': 'Взять мысль палочкой',
     'home.cta': 'Коснись и начни<br />выгружать мысли',
   },
@@ -176,6 +181,8 @@ const translations: Record<LanguageName, Record<TranslationKey, string>> = {
     'modal.editLabel': 'Edit thought',
     'modal.save': 'Save',
     'modal.cancel': 'Cancel',
+    'completion.title': 'A little lighter',
+    'completion.text': 'Your thoughts are released. Take a slow breath.',
     'wand.button': 'Take a thought with the wand',
     'home.cta': 'Touch to start<br />unloading thoughts',
   },
@@ -190,9 +197,7 @@ type PensieveThought = {
   delay: number;
   duration: number;
   depth: number;
-  orbitAngle: number;
   orbitRadiusX: number;
-  orbitRadiusY: number;
   orbitDuration: number;
 };
 
@@ -216,6 +221,7 @@ let surfacingThoughtId: number | null = null;
 let surfacingTimer = 0;
 let releaseFrame = 0;
 let clearTimer = 0;
+let completionTimer = 0;
 let selectedThoughtId: number | null = null;
 let dragState: DragState | null = null;
 let suppressThoughtClick = false;
@@ -230,6 +236,21 @@ const thoughtPositions = [
   { x: 82, y: 56 },
   { x: 48, y: 74 },
   { x: 31, y: 72 },
+];
+
+const mixingOrbits = [
+  { radiusX: 244, radiusY: 74, speed: 1 },
+  { radiusX: 206, radiusY: 92, speed: 0.94 },
+  { radiusX: 270, radiusY: 62, speed: 1.07 },
+  { radiusX: 178, radiusY: 104, speed: 0.9 },
+  { radiusX: 232, radiusY: 86, speed: 1.12 },
+  { radiusX: 154, radiusY: 68, speed: 0.86 },
+  { radiusX: 260, radiusY: 82, speed: 0.98 },
+  { radiusX: 198, radiusY: 58, speed: 1.16 },
+  { radiusX: 224, radiusY: 100, speed: 0.92 },
+  { radiusX: 136, radiusY: 50, speed: 1.04 },
+  { radiusX: 188, radiusY: 78, speed: 1.1 },
+  { radiusX: 248, radiusY: 96, speed: 0.88 },
 ];
 
 const isWallpaperName = (value: string | null): value is WallpaperName =>
@@ -310,6 +331,8 @@ const applyLanguage = (language: LanguageName) => {
   setText('label[for="thought-edit-input"]', 'modal.editLabel');
   setText('.thought-save-button', 'modal.save');
   setText('.thought-cancel-button', 'modal.cancel');
+  setText('.completion-title', 'completion.title');
+  setText('.completion-text', 'completion.text');
   setAttribute('.wand-button', 'aria-label', 'wand.button');
   setHtml('.primary-action p', 'home.cta');
 
@@ -354,9 +377,27 @@ const closeInfoDialog = () => {
   infoButton?.setAttribute('aria-expanded', 'false');
 };
 
+const hideCompletionScreen = () => {
+  window.clearTimeout(completionTimer);
+  stage?.classList.remove('has-completion');
+  completionScreen?.setAttribute('aria-hidden', 'true');
+};
+
+const showCompletionScreen = () => {
+  window.clearTimeout(completionTimer);
+  stage?.classList.add('has-completion');
+  completionScreen?.setAttribute('aria-hidden', 'false');
+
+  completionTimer = window.setTimeout(() => {
+    stage?.classList.remove('has-completion');
+    completionScreen?.setAttribute('aria-hidden', 'true');
+  }, 4200);
+};
+
 const openInfoDialog = () => {
   closeWallpaperMenu();
   closeThoughtModal();
+  hideCompletionScreen();
   stage?.classList.add('has-open-info');
   infoDialog?.setAttribute('aria-hidden', 'false');
   infoButton?.setAttribute('aria-expanded', 'true');
@@ -368,6 +409,7 @@ const openWallpaperMenu = () => {
     return;
   }
 
+  hideCompletionScreen();
   stage?.classList.add('has-open-wallpaper-menu');
   wallpaperMenu?.setAttribute('aria-hidden', 'false');
   tuneButton?.setAttribute('aria-expanded', 'true');
@@ -525,6 +567,10 @@ const updateThoughtInteractivity = () => {
 };
 
 const syncThoughtElement = (item: HTMLElement, thought: PensieveThought) => {
+  const mixingOrbit = mixingOrbits[thought.id % mixingOrbits.length];
+  const cycle = Math.floor(thought.id / mixingOrbits.length);
+  const cycleOffset = (cycle % 3) - 1;
+
   item.classList.toggle('is-surfacing', thought.id === surfacingThoughtId);
   item.textContent = thought.text;
   item.setAttribute('aria-label', `${t('modal.label')}: ${thought.text}`);
@@ -534,13 +580,12 @@ const syncThoughtElement = (item: HTMLElement, thought: PensieveThought) => {
   item.style.setProperty('--thought-delay', `${thought.delay}s`);
   item.style.setProperty('--thought-duration', `${thought.duration}s`);
   item.style.setProperty('--thought-depth', String(thought.depth));
-  item.style.setProperty('--orbit-angle', `${thought.orbitAngle}deg`);
-  item.style.setProperty('--orbit-angle-end', `${thought.orbitAngle + 360}deg`);
-  item.style.setProperty('--orbit-angle-inverse', `${-thought.orbitAngle}deg`);
-  item.style.setProperty('--orbit-angle-end-inverse', `${-(thought.orbitAngle + 360)}deg`);
   item.style.setProperty('--orbit-radius-x', `${thought.orbitRadiusX}px`);
-  item.style.setProperty('--orbit-radius-y', `${thought.orbitRadiusY}px`);
   item.style.setProperty('--orbit-duration', `${thought.orbitDuration}s`);
+  item.style.setProperty('--mixing-radius-x', `${mixingOrbit.radiusX + cycleOffset * 14}px`);
+  item.style.setProperty('--mixing-radius-y', `${mixingOrbit.radiusY + cycleOffset * 6}px`);
+  item.style.setProperty('--mixing-orbit-duration', `${thought.orbitDuration * mixingOrbit.speed}s`);
+  item.style.setProperty('--mixing-phase-delay', `${-(thought.id % mixingOrbits.length) * 1.42 - cycle * 0.76}s`);
 };
 
 const renderPensieveThoughts = () => {
@@ -885,9 +930,7 @@ const addThoughtToPensieve = (text: string) => {
       delay: -(thoughtId % 6) * 0.65,
       duration: 8.8 + (thoughtId % 5) * 1.1,
       depth: 0.42 + (thoughtId % 4) * 0.16,
-      orbitAngle: (thoughtId * 47) % 360,
       orbitRadiusX: 152 + (thoughtId % 5) * 34,
-      orbitRadiusY: 42 + (thoughtId % 5) * 12,
       orbitDuration: 14 + (thoughtId % 5) * 1.8,
     },
   ];
@@ -937,9 +980,7 @@ const loadSavedThoughts = () => {
             delay: -(thoughtId % 6) * 0.65,
             duration: 8.8 + (thoughtId % 5) * 1.1,
             depth: 0.42 + (thoughtId % 4) * 0.16,
-            orbitAngle: (thoughtId * 47) % 360,
             orbitRadiusX: 152 + (thoughtId % 5) * 34,
-            orbitRadiusY: 42 + (thoughtId % 5) * 12,
             orbitDuration: 14 + (thoughtId % 5) * 1.8,
           },
         ];
@@ -953,6 +994,7 @@ const loadSavedThoughts = () => {
 };
 
 const openCaptureScreen = () => {
+  hideCompletionScreen();
   stage?.classList.add('is-capturing');
   captureScreen?.removeAttribute('aria-hidden');
   window.setTimeout(() => thoughtInput?.focus(), 260);
@@ -962,6 +1004,7 @@ const openCaptureScreen = () => {
 const closeCaptureScreen = () => {
   window.clearTimeout(releaseTimer);
   window.clearTimeout(clearTimer);
+  hideCompletionScreen();
   window.cancelAnimationFrame(releaseFrame);
   resetReleaseStyles();
   stage?.classList.remove(
@@ -1041,6 +1084,7 @@ const clearPensieveThoughts = () => {
 
   window.clearTimeout(clearTimer);
   window.clearTimeout(surfacingTimer);
+  hideCompletionScreen();
   surfacingThoughtId = null;
   stage?.classList.remove('just-released', 'is-stirring');
   stage?.classList.add('is-clearing-thoughts');
@@ -1052,6 +1096,7 @@ const clearPensieveThoughts = () => {
     renderPensieveThoughts();
     stage?.classList.remove('is-clearing-thoughts');
     stage?.classList.add('just-cleared');
+    showCompletionScreen();
     updateLetGoButton();
 
     window.setTimeout(() => stage?.classList.remove('just-cleared'), 920);
@@ -1068,6 +1113,7 @@ const openMixingView = () => {
   }
 
   stage?.classList.remove('has-draft-thought', 'just-released', 'just-cleared', 'is-stirring');
+  hideCompletionScreen();
   closeWallpaperMenu();
   stage?.classList.add('is-mixing');
   pensieveScene?.removeAttribute('aria-hidden');
@@ -1326,12 +1372,14 @@ stage?.classList.remove(
   'has-open-thought',
   'has-open-wallpaper-menu',
   'has-open-info',
+  'has-completion',
 );
 captureScreen?.setAttribute('aria-hidden', 'true');
 pensieveScene?.setAttribute('aria-hidden', 'true');
 thoughtModal?.setAttribute('aria-hidden', 'true');
 wallpaperMenu?.setAttribute('aria-hidden', 'true');
 infoDialog?.setAttribute('aria-hidden', 'true');
+completionScreen?.setAttribute('aria-hidden', 'true');
 infoButton?.setAttribute('aria-expanded', 'false');
 loadLanguage();
 loadWallpaper();
