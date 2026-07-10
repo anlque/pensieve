@@ -49,6 +49,7 @@ import {
 import { isLanguageName, isWallpaperName } from './guards';
 import { loadLanguage, saveLanguage, t } from './localization';
 import { createReleaseAnimationController } from './releaseAnimationController';
+import { createScreenController, type ScreenController } from './screenController';
 import { createAppState } from './state';
 import { createPensieveThought } from './thoughts';
 import { createThoughtModalController } from './thoughtModalController';
@@ -62,6 +63,9 @@ import {
 import { compressWallpaperImage } from './wallpaper';
 
 const state = createAppState();
+let screenController: ScreenController;
+const closeMixingView = () => screenController.closeMixingView();
+
 const thoughtRenderer = createThoughtRenderer({
   state,
   stage,
@@ -233,6 +237,26 @@ const saveCustomWallpaper = async (file: File) => {
   }
 };
 
+screenController = createScreenController({
+  state,
+  stage,
+  captureScreen,
+  pensieveScene,
+  thoughtInput,
+  thoughtCloudText,
+  thoughtModal,
+  infoDialog,
+  infoButton,
+  releaseAnimation: releaseAnimationController,
+  t,
+  hideCompletionScreen,
+  closeWallpaperMenu,
+  closeThoughtModal: thoughtModalController.close,
+  updateThoughtInteractivity,
+  updateActions: updateLetGoButton,
+  getThoughtCount: () => state.thoughts.length,
+});
+
 const addThoughtToPensieve = (text: string) => {
   const id = state.thoughtId;
 
@@ -258,54 +282,6 @@ const loadSavedThoughtsIntoState = () => {
   state.thoughts = savedState.thoughts;
   state.thoughtId = savedState.nextThoughtId;
   renderPensieveThoughts();
-};
-
-const openCaptureScreen = () => {
-  hideCompletionScreen();
-  state.hadDraftThought = false;
-  stage?.classList.add('is-capturing');
-  captureScreen?.removeAttribute('aria-hidden');
-  releaseAnimationController.scheduleWandLightAnchorUpdate();
-  window.setTimeout(() => thoughtInput?.focus(), 260);
-  document.body.dispatchEvent(new CustomEvent('pensieve:start-thought'));
-};
-
-const closeCaptureScreen = () => {
-  window.clearTimeout(state.releaseTimer);
-  window.clearTimeout(state.clearTimer);
-  hideCompletionScreen();
-  releaseAnimationController.cancelReleaseFrame();
-  releaseAnimationController.resetStyles();
-  stage?.classList.remove(
-    'is-capturing',
-    'has-draft-thought',
-    'is-releasing',
-    'just-released',
-    'just-cleared',
-    'is-clearing-thread',
-    'is-clearing-thoughts',
-    'is-mixing',
-    'has-open-thought',
-    'has-open-info',
-  );
-  captureScreen?.setAttribute('aria-hidden', 'true');
-  pensieveScene?.setAttribute('aria-hidden', 'true');
-  thoughtModal?.setAttribute('aria-hidden', 'true');
-  infoDialog?.setAttribute('aria-hidden', 'true');
-  infoButton?.setAttribute('aria-expanded', 'false');
-  updateThoughtInteractivity();
-  updateLetGoButton();
-
-  if (thoughtInput) {
-    thoughtInput.value = '';
-    thoughtInput.disabled = false;
-  }
-
-  state.hadDraftThought = false;
-
-  if (thoughtCloudText) {
-    thoughtCloudText.textContent = t('thought.preview');
-  }
 };
 
 const syncThoughtPreview = () => {
@@ -389,41 +365,10 @@ const clearPensieveThoughts = () => {
   }, CLEAR_THOUGHTS_DURATION_MS);
 };
 
-const openMixingView = () => {
-  if (
-    state.thoughts.length === 0 ||
-    stage?.classList.contains('is-releasing') ||
-    stage?.classList.contains('is-clearing-thoughts')
-  ) {
-    return;
-  }
-
-  stage?.classList.remove('has-draft-thought', 'just-released', 'just-cleared', 'is-stirring');
-  hideCompletionScreen();
-  closeWallpaperMenu();
-  stage?.classList.add('is-mixing');
-  pensieveScene?.removeAttribute('aria-hidden');
-  updateThoughtInteractivity();
-  updateLetGoButton();
-
-  if (thoughtInput) {
-    thoughtInput.blur();
-  }
-};
-
-const closeMixingView = () => {
-  thoughtModalController.close();
-  stage?.classList.remove('is-mixing');
-  pensieveScene?.setAttribute('aria-hidden', 'true');
-  updateThoughtInteractivity();
-  updateLetGoButton();
-  window.setTimeout(() => thoughtInput?.focus(), 180);
-};
-
-wandButton?.addEventListener('click', openCaptureScreen);
-backButton?.addEventListener('click', closeCaptureScreen);
+wandButton?.addEventListener('click', screenController.openCaptureScreen);
+backButton?.addEventListener('click', screenController.closeCaptureScreen);
 letGoButton?.addEventListener('click', clearPensieveThoughts);
-mixButton?.addEventListener('click', openMixingView);
+mixButton?.addEventListener('click', screenController.openMixingView);
 mixCloseButton?.addEventListener('click', closeMixingView);
 infoButton?.addEventListener('click', openInfoDialog);
 infoCloseButton?.addEventListener('click', closeInfoDialog);
