@@ -1,0 +1,526 @@
+@keyframes slowSwirl {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes rippleDrift {
+  0%,
+  100% {
+    opacity: 0.24;
+    transform: scaleX(1.65) scaleY(0.92);
+  }
+
+  50% {
+    opacity: 0.56;
+    transform: scaleX(1.9) scaleY(1.08);
+  }
+}
+
+@keyframes dotFloat {
+  from {
+    opacity: 0.5;
+    transform: translate3d(-4px, 4px, 0) scale(0.82);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(5px, -5px, 0) scale(1.08);
+  }
+}
+
+@keyframes starBreath {
+  from {
+    opacity: 0.52;
+  }
+
+  to {
+    opacity: 0.95;
+  }
+}
+
+@keyframes thoughtDrift {
+  0%,
+  100% {
+    translate: -8px 2px;
+  }
+
+  32% {
+    translate: 9px -6px;
+  }
+
+  66% {
+    translate: -2px 7px;
+  }
+}
+
+@keyframes thoughtBowlOrbit {
+  from {
+    --mixing-angle: 0deg;
+  }
+
+  to {
+    --mixing-angle: 360deg;
+  }
+}
+
+@keyframes thoughtMixGlow {
+  from {
+    opacity: 0.68;
+    filter: blur(0.3px) brightness(1);
+  }
+
+  to {
+    opacity: 0.96;
+    filter: blur(0) brightness(1.22);
+  }
+}
+
+@keyframes draggedThoughtRelease {
+  0% {
+    opacity: 0.8;
+    transform: translate3d(0, 0, 0) scale(1.12);
+    filter:
+      blur(0.2px)
+      brightness(1.38)
+      drop-shadow(0 0 36px rgba(181, 239, 255, 0.66));
+    color: rgba(244, 250, 255, 0.94);
+    text-shadow: 0 0 0 rgba(220, 249, 255, 0);
+  }
+
+  100% {
+    opacity: 0;
+    transform:
+      translate3d(var(--release-drift-x), var(--release-drift-y), 0)
+      scale(1.24);
+    filter:
+      blur(16px)
+      brightness(1.72)
+      drop-shadow(0 0 18px rgba(184, 242, 255, 0));
+    color: rgba(235, 249, 255, 0);
+    text-shadow: 0 0 30px rgba(220, 249, 255, 0);
+  }
+}
+
+@keyframes draggedThoughtMist {
+  0% {
+    opacity: 0.16;
+    transform: translate3d(0, 0, 0) scale(0.96) rotate(-1deg);
+    filter: blur(5px);
+  }
+
+  45% {
+    opacity: 0.32;
+    transform:
+      translate3d(calc(var(--release-drift-x) * 0.42), calc(var(--release-drift-y) * 0.36), 0)
+      scale(1.28)
+      rotate(2deg);
+    filter: blur(9px);
+  }
+
+  100% {
+    opacity: 0;
+    transform:
+      translate3d(calc(var(--release-drift-x) * 1.08), calc(var(--release-drift-y) * 1.04), 0)
+      scale(1.88)
+      rotate(6deg);
+    filter: blur(15px);
+  }
+}
+
+@keyframes modalMist {
+  from {
+    transform: translate3d(-5px, 4px, 0) scale(0.98) rotate(-1.5deg);
+    opacity: 0.86;
+  }
+
+  to {
+    transform: translate3d(5px, -4px, 0) scale(1.03) rotate(1.5deg);
+    opacity: 1;
+  }
+}
+
+@keyframes thoughtSurface {
+  0%,
+  100% {
+    opacity: calc(0.24 + var(--thought-depth) * 0.42);
+    filter: blur(calc((1 - var(--thought-depth)) * 1.55px));
+  }
+
+  42% {
+    opacity: calc(0.42 + var(--thought-depth) * 0.46);
+    filter: blur(calc((1 - var(--thought-depth)) * 0.8px));
+  }
+
+  72% {
+    opacity: calc(0.18 + var(--thought-depth) * 0.36);
+    filter: blur(calc((1 - var(--thought-depth)) * 1.9px));
+  }
+}
+
+@keyframes thoughtSurfaceDeep {
+  0%,
+  100% {
+    opacity: calc(0.1 + var(--thought-depth) * 0.24);
+    filter: blur(calc((1 - var(--thought-depth)) * 2.2px)) brightness(0.92);
+  }
+
+  46% {
+    opacity: calc(0.2 + var(--thought-depth) * 0.32);
+    filter: blur(calc((1 - var(--thought-depth)) * 1.35px)) brightness(1.04);
+  }
+
+  78% {
+    opacity: calc(0.08 + var(--thought-depth) * 0.2);
+    filter: blur(calc((1 - var(--thought-depth)) * 2.55px)) brightness(0.88);
+  }
+}
+
+@keyframes thoughtSurfaceBarely {
+  0%,
+  100% {
+    opacity: calc(0.04 + var(--thought-depth) * 0.14);
+    filter: blur(calc((1 - var(--thought-depth)) * 3px)) brightness(0.78);
+  }
+
+  52% {
+    opacity: calc(0.12 + var(--thought-depth) * 0.22);
+    filter: blur(calc((1 - var(--thought-depth)) * 2px)) brightness(0.92);
+  }
+}
+
+@keyframes thoughtScatter {
+  from {
+    transform:
+      translate3d(-50%, -50%, 0)
+      scale(calc(var(--thought-scale) * (0.76 + var(--thought-depth) * 0.28)));
+  }
+
+  to {
+    transform:
+      translate3d(calc(-50% + 10px), calc(-50% - 7px), 0)
+      scale(calc(var(--thought-scale) * (0.82 + var(--thought-depth) * 0.34)));
+  }
+}
+
+@keyframes stirPulse {
+  from {
+    filter: blur(0.2px) brightness(1);
+  }
+
+  to {
+    filter: blur(0.8px) brightness(1.28);
+  }
+}
+
+@keyframes thoughtSurfaceIn {
+  0% {
+    color: rgba(233, 243, 255, 0);
+    opacity: 0;
+    transform:
+      translate3d(-50%, -42%, 0)
+      scale(calc(var(--thought-scale) * 0.56));
+    filter: blur(7px) brightness(1.85);
+    clip-path: ellipse(42% 24% at 50% 54%);
+  }
+
+  100% {
+    color: rgba(233, 243, 255, 0.9);
+    opacity: calc(0.18 + var(--thought-depth) * 0.48);
+    transform:
+      translate3d(-50%, -50%, 0)
+      scale(calc(var(--thought-scale) * (0.76 + var(--thought-depth) * 0.28)));
+    filter: blur(calc((1 - var(--thought-depth)) * 1.8px));
+    clip-path: ellipse(78% 64% at 50% 50%);
+  }
+}
+
+@keyframes completionFloat {
+  from {
+    transform: translateY(3px) scale(0.98);
+    opacity: 0.78;
+  }
+
+  to {
+    transform: translateY(-5px) scale(1.04);
+    opacity: 1;
+  }
+}
+
+@keyframes thoughtLetGo {
+  0% {
+    opacity: calc(0.28 + var(--thought-depth) * 0.56);
+    transform:
+      translate3d(-50%, -50%, 0)
+      scale(calc(var(--thought-scale) * (0.76 + var(--thought-depth) * 0.28)));
+    filter: blur(calc((1 - var(--thought-depth)) * 1.2px)) brightness(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform:
+      translate3d(calc(-50% + 18px), calc(-50% + 84px), 0)
+      scale(calc(var(--thought-scale) * 0.18));
+    filter: blur(9px) brightness(1.9);
+  }
+}
+
+@keyframes thoughtLetGoBubble {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(4px, 24px, 0) scale(0.22);
+  }
+}
+
+@keyframes thoughtRelease {
+  0% {
+    opacity: 0;
+    transform: translate3d(calc(-50% + 42px), -8px, 0) scale(0.28);
+    filter: brightness(1.75) blur(7px);
+  }
+
+  12% {
+    opacity: 0.72;
+    transform: translate3d(calc(-50% + 26px), 16px, 0) scale(0.56);
+    filter: brightness(1.48) blur(3.6px);
+  }
+
+  34% {
+    opacity: 0.95;
+    transform: translate3d(calc(-50% - 8px), 58px, 0) scale(0.78);
+    filter: brightness(1.24) blur(0.7px);
+  }
+
+  58% {
+    opacity: 0.88;
+    transform: translate3d(calc(-50% - 46px), 110px, 0) scale(0.58);
+    filter: brightness(1.34) blur(0.45px);
+  }
+
+  82% {
+    opacity: 0.48;
+    transform: translate3d(calc(-50% + var(--thought-release-target-x, -92px)), var(--thought-release-target-y, 156px), 0) scale(0.34);
+    filter: brightness(1.62) blur(1.2px);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(-50% + var(--thought-release-target-x, -92px)), var(--thought-release-target-y, 192px), 0) scale(0.12);
+    filter: brightness(1.9) blur(2.8px);
+  }
+}
+
+@keyframes wandRelease {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  22% {
+    transform: translate3d(-8px, 24px, 0) rotate(1.4deg);
+  }
+
+  52% {
+    transform: translate3d(-16px, 88px, 0) rotate(5.2deg);
+  }
+
+  78% {
+    transform: translate3d(-12px, 150px, 0) rotate(8.4deg);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+@keyframes releaseLight {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow:
+      0 0 12px 5px rgba(123, 214, 255, 0.96),
+      0 0 34px 14px rgba(63, 164, 235, 0.4);
+  }
+
+  18% {
+    transform: translate(-50%, -50%) scale(1.38);
+    box-shadow:
+      0 0 16px 8px rgba(218, 250, 255, 0.98),
+      0 0 50px 22px rgba(90, 192, 255, 0.52);
+  }
+
+  52% {
+    transform: translate(-50%, -50%) scale(1.32);
+    box-shadow:
+      0 0 18px 8px rgba(218, 250, 255, 0.96),
+      0 0 58px 24px rgba(90, 192, 255, 0.5);
+  }
+
+  76% {
+    transform: translate(-50%, -50%) scale(1.12);
+    box-shadow:
+      0 0 18px 8px rgba(123, 214, 255, 0.9),
+      0 0 56px 24px rgba(63, 164, 235, 0.44);
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(0.92);
+    box-shadow:
+      0 0 12px 5px rgba(123, 214, 255, 0.96),
+      0 0 34px 14px rgba(63, 164, 235, 0.4);
+  }
+}
+
+@keyframes releaseTrail {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px) scale(0.54) rotate(-6deg);
+    filter: blur(1.2px);
+  }
+
+  34% {
+    opacity: 0.24;
+    transform: translateX(-50%) translateY(16px) scale(0.82) rotate(-1deg);
+    filter: blur(1px);
+  }
+
+  72% {
+    opacity: 0.18;
+    transform: translateX(-50%) translateY(44px) scale(1) rotate(3deg);
+    filter: blur(1.2px);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(58px) scale(0.78) rotate(5deg);
+    filter: blur(1.4px);
+  }
+}
+
+@keyframes waterReceive {
+  0% {
+    opacity: 0;
+    transform: scale(0.32);
+  }
+
+  28% {
+    opacity: 1;
+    transform: scale(0.74);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+@keyframes waterReleaseAll {
+  0% {
+    opacity: 0.56;
+    transform: scale(0.42);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(2.28);
+  }
+}
+
+@keyframes releaseSplash {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.22);
+  }
+
+  22% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(5.8);
+  }
+}
+
+@keyframes releaseAllSplash {
+  0% {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(0.42);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(7.4);
+  }
+}
+
+@keyframes bowlAfterglow {
+  0% {
+    filter: brightness(1.22) saturate(1.22);
+  }
+
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+}
+
+@keyframes handBreath {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  50% {
+    transform: translate3d(-3px, 5px, 0) rotate(-1.5deg);
+  }
+}
+
+@keyframes wandLightPulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.86);
+  }
+
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+}
+
+@keyframes cloudFloat {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -7px;
+  }
+}
+
+@keyframes magicBeamBreathe {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 0.72;
+  }
+}
+
+@keyframes magicBeamCore {
+  0%,
+  100% {
+    opacity: 0.64;
+    stroke-width: 1.9;
+  }
+
+  50% {
+    opacity: 0.82;
+    stroke-width: 2.5;
+  }
+}
+
