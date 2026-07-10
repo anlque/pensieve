@@ -41,7 +41,6 @@ import {
 } from './dom';
 import {
   CLEAR_THOUGHTS_DURATION_MS,
-  MAX_THOUGHT_LENGTH,
   RELEASE_DURATION_MS,
   STORAGE_KEYS,
   THREAD_CLEAR_DURATION_MS,
@@ -53,13 +52,13 @@ import { isLanguageName, isWallpaperName } from './guards';
 import { loadLanguage, saveLanguage, t } from './localization';
 import { createAppState } from './state';
 import { createPensieveThought } from './thoughts';
+import { createThoughtModalController } from './thoughtModalController';
 import { createThoughtRenderer } from './thoughtRenderer';
 import {
   clearSavedThoughts as clearStoredThoughts,
   loadSavedThoughts as loadStoredThoughts,
   saveThoughts as saveStoredThoughts,
 } from './thoughtStorage';
-import type { PensieveThought } from './types';
 import { compressWallpaperImage } from './wallpaper';
 import {
   clamp,
@@ -81,6 +80,18 @@ const thoughtRenderer = createThoughtRenderer({
 const renderPensieveThoughts = thoughtRenderer.render;
 const updateLetGoButton = thoughtRenderer.updateActions;
 const updateThoughtInteractivity = thoughtRenderer.updateInteractivity;
+const saveCurrentThoughts = () => saveStoredThoughts(state.thoughts);
+const thoughtModalController = createThoughtModalController({
+  state,
+  stage,
+  modal: thoughtModal,
+  modalText: thoughtModalText,
+  editInput: thoughtEditInput,
+  editButton: thoughtEditButton,
+  renderThoughts: renderPensieveThoughts,
+  saveThoughts: saveCurrentThoughts,
+  onEmpty: () => closeMixingView(),
+});
 
 const closeWallpaperMenu = () => {
   stage?.classList.remove('has-open-wallpaper-menu');
@@ -113,7 +124,7 @@ const showCompletionScreen = () => {
 
 const openInfoDialog = () => {
   closeWallpaperMenu();
-  closeThoughtModal();
+  thoughtModalController.close();
   hideCompletionScreen();
   stage?.classList.add('has-open-info');
   infoDialog?.setAttribute('aria-hidden', 'false');
@@ -204,8 +215,6 @@ const saveCustomWallpaper = async (file: File) => {
   }
 };
 
-const getSelectedThought = () => state.thoughts.find((thought) => thought.id === state.selectedThoughtId);
-
 const isPointOutsidePensieve = (x: number, y: number) => {
   const rect = pensieveScene?.getBoundingClientRect();
 
@@ -252,7 +261,7 @@ const resetDraggedThought = () => {
 const removeThoughtByDrag = (thoughtIdToRemove: number, source: HTMLElement, ghost: HTMLElement | null) => {
   state.thoughts = state.thoughts.filter((thought) => thought.id !== thoughtIdToRemove);
   saveStoredThoughts(state.thoughts);
-  closeThoughtModal();
+  thoughtModalController.close();
   source.classList.add('is-drag-source');
 
   if (ghost && pensieveScene) {
@@ -779,101 +788,13 @@ const openMixingView = () => {
   }
 };
 
-const closeThoughtModal = () => {
-  stage?.classList.remove('has-open-thought');
-  thoughtModal?.classList.remove('is-editing');
-  thoughtModal?.setAttribute('aria-hidden', 'true');
-  state.selectedThoughtId = null;
-
-  if (thoughtModalText) {
-    thoughtModalText.textContent = '';
-  }
-
-  if (thoughtEditInput) {
-    thoughtEditInput.value = '';
-  }
-};
-
 const closeMixingView = () => {
-  closeThoughtModal();
+  thoughtModalController.close();
   stage?.classList.remove('is-mixing');
   pensieveScene?.setAttribute('aria-hidden', 'true');
   updateThoughtInteractivity();
   updateLetGoButton();
   window.setTimeout(() => thoughtInput?.focus(), 180);
-};
-
-const openThoughtModal = (thought: PensieveThought) => {
-  if (!thoughtModal || !thoughtModalText) {
-    return;
-  }
-
-  state.selectedThoughtId = thought.id;
-  thoughtModal.classList.remove('is-editing');
-  thoughtModalText.textContent = thought.text;
-  thoughtModal.removeAttribute('aria-hidden');
-  stage?.classList.add('has-open-thought');
-  window.setTimeout(() => thoughtEditButton?.focus(), 120);
-};
-
-const startEditingThought = () => {
-  const thought = getSelectedThought();
-
-  if (!thought || !thoughtModal || !thoughtEditInput) {
-    return;
-  }
-
-  thoughtEditInput.value = thought.text;
-  thoughtModal.classList.add('is-editing');
-  const editInput = thoughtEditInput;
-  window.setTimeout(() => {
-    editInput.focus();
-    editInput.select();
-  }, 80);
-};
-
-const stopEditingThought = () => {
-  thoughtModal?.classList.remove('is-editing');
-  window.setTimeout(() => thoughtEditButton?.focus(), 80);
-};
-
-const saveEditedThought = () => {
-  const thought = getSelectedThought();
-  const nextText = thoughtEditInput?.value.trim() ?? '';
-
-  if (!thought || !nextText) {
-    thoughtEditInput?.focus();
-    return;
-  }
-
-  state.thoughts = state.thoughts.map((item) =>
-    item.id === thought.id ? { ...item, text: nextText.slice(0, MAX_THOUGHT_LENGTH) } : item,
-  );
-  renderPensieveThoughts();
-  saveStoredThoughts(state.thoughts);
-
-  if (thoughtModalText) {
-    thoughtModalText.textContent = nextText.slice(0, MAX_THOUGHT_LENGTH);
-  }
-
-  stopEditingThought();
-};
-
-const deleteSelectedThought = () => {
-  const thought = getSelectedThought();
-
-  if (!thought) {
-    return;
-  }
-
-  state.thoughts = state.thoughts.filter((item) => item.id !== thought.id);
-  saveStoredThoughts(state.thoughts);
-  closeThoughtModal();
-  renderPensieveThoughts();
-
-  if (state.thoughts.length === 0) {
-    closeMixingView();
-  }
 };
 
 wandButton?.addEventListener('click', openCaptureScreen);
@@ -942,30 +863,30 @@ document.addEventListener('keydown', (event) => {
       return;
     }
 
-    if (thoughtModal?.classList.contains('is-editing')) {
-      stopEditingThought();
+    if (thoughtModalController.isEditing()) {
+      thoughtModalController.stopEditing();
       return;
     }
 
     if (stage?.classList.contains('has-open-thought')) {
-      closeThoughtModal();
+      thoughtModalController.close();
       return;
     }
 
     closeWallpaperMenu();
   }
 });
-thoughtModalClose?.addEventListener('click', closeThoughtModal);
-thoughtEditButton?.addEventListener('click', startEditingThought);
-thoughtCancelButton?.addEventListener('click', stopEditingThought);
-thoughtDeleteButton?.addEventListener('click', deleteSelectedThought);
+thoughtModalClose?.addEventListener('click', thoughtModalController.close);
+thoughtEditButton?.addEventListener('click', thoughtModalController.startEditing);
+thoughtCancelButton?.addEventListener('click', thoughtModalController.stopEditing);
+thoughtDeleteButton?.addEventListener('click', thoughtModalController.deleteSelected);
 thoughtEditForm?.addEventListener('submit', (event) => {
   event.preventDefault();
-  saveEditedThought();
+  thoughtModalController.saveEdited();
 });
 thoughtModal?.addEventListener('click', (event) => {
   if (event.target === thoughtModal) {
-    closeThoughtModal();
+    thoughtModalController.close();
   }
 });
 infoDialog?.addEventListener('click', (event) => {
@@ -989,7 +910,7 @@ pensieveThoughts?.addEventListener('click', (event) => {
   const thought = state.thoughts.find((item) => String(item.id) === thoughtElement?.dataset.thoughtId);
 
   if (thought) {
-    openThoughtModal(thought);
+    thoughtModalController.open(thought);
   }
 });
 pensieveThoughts?.addEventListener('pointerdown', startThoughtDrag);
