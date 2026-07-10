@@ -678,7 +678,19 @@ const removeThoughtByDrag = (thoughtIdToRemove: number, source: HTMLElement, gho
   saveThoughts();
   closeThoughtModal();
   source.classList.add('is-drag-source');
-  ghost?.classList.remove('is-drag-outside');
+
+  if (ghost && pensieveScene) {
+    const ghostRect = ghost.getBoundingClientRect();
+    const bowlRect = pensieveScene.getBoundingClientRect();
+    const ghostCenterX = ghostRect.left + ghostRect.width / 2;
+    const ghostCenterY = ghostRect.top + ghostRect.height / 2;
+    const bowlCenterX = bowlRect.left + bowlRect.width / 2;
+    const bowlCenterY = bowlRect.top + bowlRect.height / 2;
+
+    ghost.style.setProperty('--release-drift-x', `${clamp((ghostCenterX - bowlCenterX) * 0.18, -34, 34).toFixed(1)}px`);
+    ghost.style.setProperty('--release-drift-y', `${clamp((ghostCenterY - bowlCenterY) * 0.12 - 34, -58, -18).toFixed(1)}px`);
+  }
+
   ghost?.classList.add('is-drag-releasing');
   stage?.classList.remove('is-dragging-thought', 'can-release-dragged-thought');
   stage?.classList.add('just-released-dragged-thought');
@@ -695,7 +707,7 @@ const removeThoughtByDrag = (thoughtIdToRemove: number, source: HTMLElement, gho
     if (thoughts.length === 0 && stage?.classList.contains('is-mixing')) {
       closeMixingView();
     }
-  }, 420);
+  }, 1040);
 };
 
 const moveDraggedThought = (event: PointerEvent) => {
