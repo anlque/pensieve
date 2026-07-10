@@ -1,0 +1,177 @@
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+
+const root = process.cwd();
+const errors = [];
+const warnings = [];
+
+const read = (path) => readFileSync(join(root, path), 'utf8');
+const kb = (bytes) => `${(bytes / 1024).toFixed(1)} kB`;
+
+const fail = (message) => errors.push(message);
+const warn = (message) => warnings.push(message);
+
+const collectFiles = (dir, extension) => {
+  const result = [];
+
+  for (const entry of readdirSync(join(root, dir), { withFileTypes: true })) {
+    const relativePath = join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      result.push(...collectFiles(relativePath, extension));
+      continue;
+    }
+
+    if (entry.name.endsWith(extension)) {
+      result.push(relativePath);
+    }
+  }
+
+  return result;
+};
+
+const checkStaticHtml = () => {
+  const html = read('index.html');
+
+  if (!/<title>[^<]+<\/title>/.test(html)) {
+    fail('index.html is missing a document title.');
+  }
+
+  if (!/<meta\s+name="description"\s+content="[^"]{40,}"/.test(html)) {
+    fail('index.html needs a meaningful meta description.');
+  }
+
+  if (!/<meta\s+name="viewport"/.test(html)) {
+    fail('index.html is missing a viewport meta tag.');
+  }
+
+  if (!/<link\s+rel="icon"/.test(html)) {
+    fail('index.html is missing a favicon link.');
+  }
+
+  if (!/<main\b[^>]*id="app"/.test(html)) {
+    fail('The app shell should keep a main landmark with id="app".');
+  }
+
+  const buttonMatches = html.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g);
+
+  for (const match of buttonMatches) {
+    const attributes = match[1];
+    const content = match[2].replace(/<[^>]+>/g, '').trim();
+    const hasAriaLabel = /\saria-label="[^"]+"/.test(attributes);
+    const hasTitle = /\stitle="[^"]+"/.test(attributes);
+
+    if (!content && !hasAriaLabel && !hasTitle) {
+      fail(`A static button is missing an accessible name: <button${attributes}>`);
+    }
+  }
+
+  const dialogs = html.matchAll(/<([a-z]+)\b([^>]*role="dialog"[^>]*)>/g);
+
+  for (const match of dialogs) {
+    const attributes = match[2];
+    const hasName = /\saria-label="[^"]+"/.test(attributes) || /\saria-labelledby="[^"]+"/.test(attributes);
+    const hasModalState = /\saria-modal="true"/.test(attributes);
+
+    if (!hasName) {
+      fail('A dialog is missing aria-label or aria-labelledby.');
+    }
+
+    if (!hasModalState) {
+      fail('A dialog is missing aria-modal="true".');
+    }
+  }
+};
+
+const checkCssVariables = () => {
+  const cssFiles = collectFiles('src/styles', '.css');
+  const tsFiles = collectFiles('src', '.ts');
+  const definitionPattern = /--([a-z0-9-]+)\s*:/gi;
+  const jsDefinitionPattern = /setProperty\(\s*['"]--([a-z0-9-]+)['"]/gi;
+  const usagePattern = /var\(\s*--([a-z0-9-]+)/gi;
+  const definitions = new Set();
+  const usages = new Map();
+
+  for (const file of cssFiles) {
+    const source = read(file);
+
+    for (const match of source.matchAll(definitionPattern)) {
+      definitions.add(match[1]);
+    }
+
+    for (const match of source.matchAll(usagePattern)) {
+      const name = match[1];
+      usages.set(name, [...(usages.get(name) ?? []), file]);
+    }
+  }
+
+  for (const file of tsFiles) {
+    const source = read(file);
+
+    for (const match of source.matchAll(jsDefinitionPattern)) {
+      definitions.add(match[1]);
+    }
+  }
+
+  for (const [name, files] of usages) {
+    if (!definitions.has(name)) {
+      fail(`CSS custom property --${name} is used but not defined. Seen in ${[...new Set(files)].join(', ')}.`);
+    }
+  }
+};
+
+const checkBundleBudget = () => {
+  const distAssetsPath = join(root, 'dist/assets');
+
+  if (!existsSync(distAssetsPath)) {
+    warn('dist/assets is missing. Run npm run build before checking bundle budgets.');
+    return;
+  }
+
+  const budgets = [
+    { extension: '.js', maxBytes: 60 * 1024, label: 'JavaScript bundle' },
+    { extension: '.css', maxBytes: 90 * 1024, label: 'CSS bundle' },
+    { extension: '.png', maxBytes: 360 * 1024, label: 'PNG asset' },
+  ];
+
+  for (const entry of readdirSync(distAssetsPath)) {
+    const filePath = join(distAssetsPath, entry);
+    const stat = statSync(filePath);
+    const budget = budgets.find((item) => entry.endsWith(item.extension));
+
+    if (budget && stat.size > budget.maxBytes) {
+      fail(`${budget.label} ${entry} is ${kb(stat.size)}, above the ${kb(budget.maxBytes)} budget.`);
+    }
+  }
+};
+
+const checkRequiredAssets = () => {
+  const requiredFiles = [
+    'public/favicon.svg',
+    'src/assets/hand-wand.png',
+    'README.md',
+  ];
+
+  for (const file of requiredFiles) {
+    if (!existsSync(join(root, file))) {
+      fail(`Required project asset is missing: ${file}.`);
+    }
+  }
+};
+
+checkStaticHtml();
+checkCssVariables();
+checkRequiredAssets();
+checkBundleBudget();
+
+for (const message of warnings) {
+  console.warn(`Warning: ${message}`);
+}
+
+if (errors.length > 0) {
+  console.error('\nQuality check failed:');
+  errors.forEach((message) => console.error(`- ${message}`));
+  process.exit(1);
+}
+
+console.log('Quality check passed.');
