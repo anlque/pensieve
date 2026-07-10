@@ -53,8 +53,9 @@ import {
 } from './config';
 import { isLanguageName, isWallpaperName } from './guards';
 import { loadLanguage, saveLanguage, t } from './localization';
+import { createAppState } from './state';
 import { createPensieveThought } from './thoughts';
-import type { DragState, PensieveThought } from './types';
+import type { PensieveThought } from './types';
 import { compressWallpaperImage } from './wallpaper';
 import {
   clamp,
@@ -64,22 +65,7 @@ import {
   mix,
 } from './utils/math';
 
-let thoughtThreadLength = 0;
-let thoughtThreadClearFrame = 0;
-let hadDraftThought = false;
-
-let releaseTimer = 0;
-let thoughtId = 0;
-let releasedThought = '';
-let thoughts: PensieveThought[] = [];
-let surfacingThoughtId: number | null = null;
-let surfacingTimer = 0;
-let releaseFrame = 0;
-let clearTimer = 0;
-let completionTimer = 0;
-let selectedThoughtId: number | null = null;
-let dragState: DragState | null = null;
-let suppressThoughtClick = false;
+const state = createAppState();
 
 const closeWallpaperMenu = () => {
   stage?.classList.remove('has-open-wallpaper-menu');
@@ -94,17 +80,17 @@ const closeInfoDialog = () => {
 };
 
 const hideCompletionScreen = () => {
-  window.clearTimeout(completionTimer);
+  window.clearTimeout(state.completionTimer);
   stage?.classList.remove('has-completion');
   completionScreen?.setAttribute('aria-hidden', 'true');
 };
 
 const showCompletionScreen = () => {
-  window.clearTimeout(completionTimer);
+  window.clearTimeout(state.completionTimer);
   stage?.classList.add('has-completion');
   completionScreen?.setAttribute('aria-hidden', 'false');
 
-  completionTimer = window.setTimeout(() => {
+  state.completionTimer = window.setTimeout(() => {
     stage?.classList.remove('has-completion');
     completionScreen?.setAttribute('aria-hidden', 'true');
   }, 4200);
@@ -210,13 +196,13 @@ const updateLetGoButton = () => {
     stage?.classList.contains('is-mixing');
 
   if (letGoButton) {
-    letGoButton.hidden = thoughts.length === 0;
-    letGoButton.disabled = thoughts.length === 0 || Boolean(isBusy);
+    letGoButton.hidden = state.thoughts.length === 0;
+    letGoButton.disabled = state.thoughts.length === 0 || Boolean(isBusy);
   }
 
   if (mixButton) {
-    mixButton.hidden = thoughts.length === 0;
-    mixButton.disabled = thoughts.length === 0 || Boolean(isBusy);
+    mixButton.hidden = state.thoughts.length === 0;
+    mixButton.disabled = state.thoughts.length === 0 || Boolean(isBusy);
   }
 };
 
@@ -244,7 +230,7 @@ const syncThoughtElement = (item: HTMLElement, thought: PensieveThought) => {
   const cycle = Math.floor(thought.id / MIXING_ORBITS.length);
   const cycleOffset = (cycle % 3) - 1;
 
-  item.classList.toggle('is-surfacing', thought.id === surfacingThoughtId);
+  item.classList.toggle('is-surfacing', thought.id === state.surfacingThoughtId);
   item.textContent = thought.text;
   item.setAttribute('aria-label', `${t('modal.label')}: ${thought.text}`);
   item.style.setProperty('--thought-x', `${thought.x}%`);
@@ -274,7 +260,7 @@ const renderPensieveThoughts = () => {
     ]),
   );
 
-  thoughts.forEach((thought) => {
+  state.thoughts.forEach((thought) => {
     const key = String(thought.id);
     const item = currentItems.get(key) ?? createThoughtElement(thought);
     syncThoughtElement(item, thought);
@@ -288,21 +274,21 @@ const renderPensieveThoughts = () => {
 
   currentItems.forEach((item) => item.remove());
 
-  stage?.classList.toggle('has-pensieve-thoughts', thoughts.length > 0);
-  stage?.classList.toggle('has-many-thoughts', thoughts.length > 5);
+  stage?.classList.toggle('has-pensieve-thoughts', state.thoughts.length > 0);
+  stage?.classList.toggle('has-many-thoughts', state.thoughts.length > 5);
   updateThoughtInteractivity();
   updateLetGoButton();
 };
 
 const saveThoughts = () => {
   try {
-    window.localStorage.setItem(STORAGE_KEYS.thoughts, JSON.stringify(thoughts.map((thought) => thought.text)));
+    window.localStorage.setItem(STORAGE_KEYS.thoughts, JSON.stringify(state.thoughts.map((thought) => thought.text)));
   } catch {
     // Storage is a convenience; the app should still work without it.
   }
 };
 
-const getSelectedThought = () => thoughts.find((thought) => thought.id === selectedThoughtId);
+const getSelectedThought = () => state.thoughts.find((thought) => thought.id === state.selectedThoughtId);
 
 const isPointOutsidePensieve = (x: number, y: number) => {
   const rect = pensieveScene?.getBoundingClientRect();
@@ -337,18 +323,18 @@ const createThoughtDragGhost = (source: HTMLElement) => {
 };
 
 const resetDraggedThought = () => {
-  if (!dragState) {
+  if (!state.dragState) {
     return;
   }
 
-  dragState.element.classList.remove('is-drag-source');
-  dragState.ghost?.remove();
+  state.dragState.element.classList.remove('is-drag-source');
+  state.dragState.ghost?.remove();
   stage?.classList.remove('is-dragging-thought', 'can-release-dragged-thought');
-  dragState = null;
+  state.dragState = null;
 };
 
 const removeThoughtByDrag = (thoughtIdToRemove: number, source: HTMLElement, ghost: HTMLElement | null) => {
-  thoughts = thoughts.filter((thought) => thought.id !== thoughtIdToRemove);
+  state.thoughts = state.thoughts.filter((thought) => thought.id !== thoughtIdToRemove);
   saveThoughts();
   closeThoughtModal();
   source.classList.add('is-drag-source');
@@ -368,7 +354,7 @@ const removeThoughtByDrag = (thoughtIdToRemove: number, source: HTMLElement, gho
   ghost?.classList.add('is-drag-releasing');
   stage?.classList.remove('is-dragging-thought', 'can-release-dragged-thought');
   stage?.classList.add('just-released-dragged-thought');
-  dragState = null;
+  state.dragState = null;
   updateLetGoButton();
 
   window.setTimeout(() => {
@@ -376,59 +362,59 @@ const removeThoughtByDrag = (thoughtIdToRemove: number, source: HTMLElement, gho
     source.remove();
     renderPensieveThoughts();
     stage?.classList.remove('just-released-dragged-thought');
-    suppressThoughtClick = false;
+    state.suppressThoughtClick = false;
 
-    if (thoughts.length === 0 && stage?.classList.contains('is-mixing')) {
+    if (state.thoughts.length === 0 && stage?.classList.contains('is-mixing')) {
       closeMixingView();
     }
   }, 1040);
 };
 
 const moveDraggedThought = (event: PointerEvent) => {
-  if (!dragState || event.pointerId !== dragState.pointerId) {
+  if (!state.dragState || event.pointerId !== state.dragState.pointerId) {
     return;
   }
 
-  const deltaX = event.clientX - dragState.startX;
-  const deltaY = event.clientY - dragState.startY;
+  const deltaX = event.clientX - state.dragState.startX;
+  const deltaY = event.clientY - state.dragState.startY;
   const distance = Math.hypot(deltaX, deltaY);
 
-  if (!dragState.hasMoved && distance < 8) {
+  if (!state.dragState.hasMoved && distance < 8) {
     return;
   }
 
   event.preventDefault();
-  dragState.hasMoved = true;
-  suppressThoughtClick = true;
+  state.dragState.hasMoved = true;
+  state.suppressThoughtClick = true;
   stage?.classList.add('is-dragging-thought');
-  dragState.element.classList.add('is-drag-source');
+  state.dragState.element.classList.add('is-drag-source');
 
-  if (!dragState.ghost) {
-    dragState.ghost = createThoughtDragGhost(dragState.element);
+  if (!state.dragState.ghost) {
+    state.dragState.ghost = createThoughtDragGhost(state.dragState.element);
   }
 
-  dragState.ghost.style.left = `${event.clientX - dragState.offsetX}px`;
-  dragState.ghost.style.top = `${event.clientY - dragState.offsetY}px`;
+  state.dragState.ghost.style.left = `${event.clientX - state.dragState.offsetX}px`;
+  state.dragState.ghost.style.top = `${event.clientY - state.dragState.offsetY}px`;
 
   const isOutside = isPointOutsidePensieve(event.clientX, event.clientY);
-  dragState.ghost.classList.toggle('is-drag-outside', isOutside);
+  state.dragState.ghost.classList.toggle('is-drag-outside', isOutside);
   stage?.classList.toggle('can-release-dragged-thought', isOutside);
 };
 
 const endDraggedThought = (event: PointerEvent) => {
-  if (!dragState || event.pointerId !== dragState.pointerId) {
+  if (!state.dragState || event.pointerId !== state.dragState.pointerId) {
     return;
   }
 
-  const state = dragState;
+  const drag = state.dragState;
 
   try {
-    state.element.releasePointerCapture(state.pointerId);
+    drag.element.releasePointerCapture(drag.pointerId);
   } catch {
     // Pointer capture is a progressive enhancement here.
   }
 
-  if (!state.hasMoved) {
+  if (!drag.hasMoved) {
     resetDraggedThought();
     return;
   }
@@ -436,20 +422,20 @@ const endDraggedThought = (event: PointerEvent) => {
   event.preventDefault();
 
   if (isPointOutsidePensieve(event.clientX, event.clientY)) {
-    removeThoughtByDrag(state.thoughtId, state.element, state.ghost);
+    removeThoughtByDrag(drag.thoughtId, drag.element, drag.ghost);
     return;
   }
 
   resetDraggedThought();
   window.setTimeout(() => {
-    suppressThoughtClick = false;
+    state.suppressThoughtClick = false;
   }, 0);
 };
 
 const cancelDraggedThought = () => {
   resetDraggedThought();
   window.setTimeout(() => {
-    suppressThoughtClick = false;
+    state.suppressThoughtClick = false;
   }, 0);
 };
 
@@ -475,7 +461,7 @@ const startThoughtDrag = (event: PointerEvent) => {
   }
 
   const rect = element.getBoundingClientRect();
-  dragState = {
+  state.dragState = {
     thoughtId: thoughtIdToDrag,
     element,
     ghost: null,
@@ -486,7 +472,7 @@ const startThoughtDrag = (event: PointerEvent) => {
     offsetY: event.clientY - rect.top,
     hasMoved: false,
   };
-  suppressThoughtClick = false;
+  state.suppressThoughtClick = false;
 
   try {
     element.setPointerCapture(event.pointerId);
@@ -505,7 +491,7 @@ const clearSavedThoughts = () => {
 
 const setThoughtThreadErase = (amount: number, direction: 'release' | 'clear' = 'release') => {
   thoughtThreadPaths.forEach((path) => {
-    const length = thoughtThreadLength || path.getTotalLength();
+    const length = state.thoughtThreadLength || path.getTotalLength();
     const offset = direction === 'release' ? -amount * length : amount * length;
     path.style.strokeDasharray = `${length.toFixed(2)} ${length.toFixed(2)}`;
     path.style.strokeDashoffset = `${offset.toFixed(2)}`;
@@ -520,7 +506,7 @@ const clearThoughtThreadErase = () => {
 };
 
 const resetReleaseStyles = ({ keepThreadErased = false } = {}) => {
-  window.cancelAnimationFrame(thoughtThreadClearFrame);
+  window.cancelAnimationFrame(state.thoughtThreadClearFrame);
   stage?.classList.remove('is-clearing-thread');
 
   [thoughtCloud, thoughtStream, releaseTrail, wandHand, wandLight].forEach((element) => {
@@ -536,7 +522,7 @@ const resetReleaseStyles = ({ keepThreadErased = false } = {}) => {
 };
 
 const animateThoughtThreadClear = () => {
-  window.cancelAnimationFrame(thoughtThreadClearFrame);
+  window.cancelAnimationFrame(state.thoughtThreadClearFrame);
   updateWandLightAnchor();
   stage?.classList.add('is-clearing-thread');
 
@@ -557,7 +543,7 @@ const animateThoughtThreadClear = () => {
     setThoughtThreadErase(erase, 'clear');
 
     if (progress < 1) {
-      thoughtThreadClearFrame = window.requestAnimationFrame(step);
+      state.thoughtThreadClearFrame = window.requestAnimationFrame(step);
       return;
     }
 
@@ -566,7 +552,7 @@ const animateThoughtThreadClear = () => {
     setThoughtThreadErase(1, 'clear');
   };
 
-  thoughtThreadClearFrame = window.requestAnimationFrame(step);
+  state.thoughtThreadClearFrame = window.requestAnimationFrame(step);
 };
 
 const updateWandLightAnchor = () => {
@@ -612,7 +598,7 @@ const updateWandLightAnchor = () => {
   stage.style.setProperty('--thought-release-target-y', `${(bowlCenterY - lightY).toFixed(2)}px`);
   thoughtStreamSvg?.setAttribute('viewBox', `0 0 ${streamWidth.toFixed(2)} ${streamHeight.toFixed(2)}`);
   thoughtThreadPaths.forEach((path) => path.setAttribute('d', beamPath));
-  thoughtThreadLength = thoughtThreadPaths[0]?.getTotalLength() ?? 0;
+  state.thoughtThreadLength = thoughtThreadPaths[0]?.getTotalLength() ?? 0;
 
   return {
     targetX: bowlCenterX - lightX,
@@ -627,7 +613,7 @@ const scheduleWandLightAnchorUpdate = () => {
 };
 
 const animateRelease = () => {
-  window.cancelAnimationFrame(releaseFrame);
+  window.cancelAnimationFrame(state.releaseFrame);
 
   const startedAt = window.performance.now();
   const releaseTarget = updateWandLightAnchor() ?? {
@@ -694,32 +680,32 @@ const animateRelease = () => {
     }
 
     if (progress < 1) {
-      releaseFrame = window.requestAnimationFrame(step);
+      state.releaseFrame = window.requestAnimationFrame(step);
       return;
     }
 
     finishRelease();
   };
 
-  releaseFrame = window.requestAnimationFrame(step);
+  state.releaseFrame = window.requestAnimationFrame(step);
 };
 
 const addThoughtToPensieve = (text: string) => {
-  const id = thoughtId;
+  const id = state.thoughtId;
 
-  thoughts = [
-    ...thoughts,
+  state.thoughts = [
+    ...state.thoughts,
     createPensieveThought(text, id),
   ];
 
-  thoughtId += 1;
-  surfacingThoughtId = id;
+  state.thoughtId += 1;
+  state.surfacingThoughtId = id;
   renderPensieveThoughts();
   saveThoughts();
 
-  window.clearTimeout(surfacingTimer);
-  surfacingTimer = window.setTimeout(() => {
-    surfacingThoughtId = null;
+  window.clearTimeout(state.surfacingTimer);
+  state.surfacingTimer = window.setTimeout(() => {
+    state.surfacingThoughtId = null;
     renderPensieveThoughts();
   }, THOUGHT_SURFACE_DURATION_MS);
 };
@@ -744,11 +730,11 @@ const loadSavedThoughts = () => {
       .filter((text): text is string => typeof text === 'string' && text.trim().length > 0)
       .slice(0, MAX_STORED_THOUGHTS)
       .forEach((text) => {
-        thoughts = [
-          ...thoughts,
-          createPensieveThought(text, thoughtId),
+        state.thoughts = [
+          ...state.thoughts,
+          createPensieveThought(text, state.thoughtId),
         ];
-        thoughtId += 1;
+        state.thoughtId += 1;
       });
 
     renderPensieveThoughts();
@@ -759,7 +745,7 @@ const loadSavedThoughts = () => {
 
 const openCaptureScreen = () => {
   hideCompletionScreen();
-  hadDraftThought = false;
+  state.hadDraftThought = false;
   stage?.classList.add('is-capturing');
   captureScreen?.removeAttribute('aria-hidden');
   scheduleWandLightAnchorUpdate();
@@ -768,10 +754,10 @@ const openCaptureScreen = () => {
 };
 
 const closeCaptureScreen = () => {
-  window.clearTimeout(releaseTimer);
-  window.clearTimeout(clearTimer);
+  window.clearTimeout(state.releaseTimer);
+  window.clearTimeout(state.clearTimer);
   hideCompletionScreen();
-  window.cancelAnimationFrame(releaseFrame);
+  window.cancelAnimationFrame(state.releaseFrame);
   resetReleaseStyles();
   stage?.classList.remove(
     'is-capturing',
@@ -798,7 +784,7 @@ const closeCaptureScreen = () => {
     thoughtInput.disabled = false;
   }
 
-  hadDraftThought = false;
+  state.hadDraftThought = false;
 
   if (thoughtCloudText) {
     thoughtCloudText.textContent = t('thought.preview');
@@ -814,17 +800,17 @@ const syncThoughtPreview = () => {
   updateWandLightAnchor();
 
   if (hasThought && !isReleasing) {
-    window.cancelAnimationFrame(thoughtThreadClearFrame);
+    window.cancelAnimationFrame(state.thoughtThreadClearFrame);
     stage?.classList.remove('is-clearing-thread');
     thoughtStream?.removeAttribute('style');
     clearThoughtThreadErase();
   }
 
-  if (!hasThought && hadDraftThought && !isReleasing) {
+  if (!hasThought && state.hadDraftThought && !isReleasing) {
     animateThoughtThreadClear();
   }
 
-  hadDraftThought = hasThought;
+  state.hadDraftThought = hasThought;
 
   if (thoughtCloudText) {
     thoughtCloudText.textContent = thought || t('thought.preview');
@@ -832,17 +818,17 @@ const syncThoughtPreview = () => {
 };
 
 const finishRelease = () => {
-  window.cancelAnimationFrame(releaseFrame);
+  window.cancelAnimationFrame(state.releaseFrame);
 
-  if (releasedThought) {
-    addThoughtToPensieve(releasedThought);
-    releasedThought = '';
+  if (state.releasedThought) {
+    addThoughtToPensieve(state.releasedThought);
+    state.releasedThought = '';
   }
 
   stage?.classList.remove('is-releasing', 'has-draft-thought');
   stage?.classList.add('just-released');
   resetReleaseStyles({ keepThreadErased: true });
-  hadDraftThought = false;
+  state.hadDraftThought = false;
   updateLetGoButton();
 
   if (thoughtInput) {
@@ -860,7 +846,7 @@ const finishRelease = () => {
 
 const clearPensieveThoughts = () => {
   if (
-    thoughts.length === 0 ||
+    state.thoughts.length === 0 ||
     stage?.classList.contains('is-releasing') ||
     stage?.classList.contains('is-clearing-thoughts') ||
     stage?.classList.contains('is-mixing')
@@ -868,16 +854,16 @@ const clearPensieveThoughts = () => {
     return;
   }
 
-  window.clearTimeout(clearTimer);
-  window.clearTimeout(surfacingTimer);
+  window.clearTimeout(state.clearTimer);
+  window.clearTimeout(state.surfacingTimer);
   hideCompletionScreen();
-  surfacingThoughtId = null;
+  state.surfacingThoughtId = null;
   stage?.classList.remove('just-released', 'is-stirring');
   stage?.classList.add('is-clearing-thoughts');
   updateLetGoButton();
 
-  clearTimer = window.setTimeout(() => {
-    thoughts = [];
+  state.clearTimer = window.setTimeout(() => {
+    state.thoughts = [];
     clearSavedThoughts();
     renderPensieveThoughts();
     stage?.classList.remove('is-clearing-thoughts');
@@ -891,7 +877,7 @@ const clearPensieveThoughts = () => {
 
 const openMixingView = () => {
   if (
-    thoughts.length === 0 ||
+    state.thoughts.length === 0 ||
     stage?.classList.contains('is-releasing') ||
     stage?.classList.contains('is-clearing-thoughts')
   ) {
@@ -915,7 +901,7 @@ const closeThoughtModal = () => {
   stage?.classList.remove('has-open-thought');
   thoughtModal?.classList.remove('is-editing');
   thoughtModal?.setAttribute('aria-hidden', 'true');
-  selectedThoughtId = null;
+  state.selectedThoughtId = null;
 
   if (thoughtModalText) {
     thoughtModalText.textContent = '';
@@ -940,7 +926,7 @@ const openThoughtModal = (thought: PensieveThought) => {
     return;
   }
 
-  selectedThoughtId = thought.id;
+  state.selectedThoughtId = thought.id;
   thoughtModal.classList.remove('is-editing');
   thoughtModalText.textContent = thought.text;
   thoughtModal.removeAttribute('aria-hidden');
@@ -978,7 +964,7 @@ const saveEditedThought = () => {
     return;
   }
 
-  thoughts = thoughts.map((item) =>
+  state.thoughts = state.thoughts.map((item) =>
     item.id === thought.id ? { ...item, text: nextText.slice(0, MAX_THOUGHT_LENGTH) } : item,
   );
   renderPensieveThoughts();
@@ -998,12 +984,12 @@ const deleteSelectedThought = () => {
     return;
   }
 
-  thoughts = thoughts.filter((item) => item.id !== thought.id);
+  state.thoughts = state.thoughts.filter((item) => item.id !== thought.id);
   saveThoughts();
   closeThoughtModal();
   renderPensieveThoughts();
 
-  if (thoughts.length === 0) {
+  if (state.thoughts.length === 0) {
     closeMixingView();
   }
 };
@@ -1107,8 +1093,8 @@ infoDialog?.addEventListener('click', (event) => {
 });
 thoughtInput?.addEventListener('input', syncThoughtPreview);
 pensieveThoughts?.addEventListener('click', (event) => {
-  if (suppressThoughtClick) {
-    suppressThoughtClick = false;
+  if (state.suppressThoughtClick) {
+    state.suppressThoughtClick = false;
     event.preventDefault();
     return;
   }
@@ -1118,7 +1104,7 @@ pensieveThoughts?.addEventListener('click', (event) => {
   }
 
   const thoughtElement = (event.target as HTMLElement).closest<HTMLElement>('.pensieve-thought');
-  const thought = thoughts.find((item) => String(item.id) === thoughtElement?.dataset.thoughtId);
+  const thought = state.thoughts.find((item) => String(item.id) === thoughtElement?.dataset.thoughtId);
 
   if (thought) {
     openThoughtModal(thought);
@@ -1148,12 +1134,12 @@ thoughtForm?.addEventListener('submit', (event) => {
     return;
   }
 
-  releasedThought = thoughtInput.value.trim();
+  state.releasedThought = thoughtInput.value.trim();
   thoughtInput.disabled = true;
   stage?.classList.remove('just-released');
   stage?.classList.add('is-releasing');
 
-  window.clearTimeout(releaseTimer);
+  window.clearTimeout(state.releaseTimer);
   animateRelease();
 });
 
