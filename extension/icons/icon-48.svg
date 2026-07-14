@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Memory Bowl">
+  <rect width="64" height="64" rx="16" fill="#02070b"/>
+  <ellipse cx="32" cy="36" rx="23" ry="13" fill="#061928" stroke="#8bdcff" stroke-opacity=".55" stroke-width="1.4"/>
+  <ellipse cx="32" cy="36" rx="16" ry="7.5" fill="none" stroke="#7bd6ff" stroke-opacity=".34" stroke-width="1.2"/>
+  <ellipse cx="32" cy="36" rx="9" ry="3.8" fill="none" stroke="#d6faff" stroke-opacity=".46" stroke-width="1"/>
+  <circle cx="32" cy="33" r="3.4" fill="#d6faff"/>
+  <circle cx="32" cy="33" r="10" fill="#7bd6ff" opacity=".16"/>
+  <circle cx="23" cy="31" r="1.8" fill="#b5efff" opacity=".88"/>
+  <circle cx="43" cy="34" r="1.5" fill="#b5efff" opacity=".72"/>
+  <path d="M18 21c5-6 13-8 22-6" fill="none" stroke="#7bd6ff" stroke-opacity=".28" stroke-width="1.2" stroke-linecap="round"/>
+</svg>

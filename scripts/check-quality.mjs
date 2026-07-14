@@ -53,6 +53,10 @@ const checkStaticHtml = () => {
     fail('The app shell should keep a main landmark with id="app".');
   }
 
+  if (/<script\b(?![^>]*\bsrc=)[^>]*>[\s\S]*?<\/script>/.test(html)) {
+    fail('index.html contains an inline script. Extension pages should use local external scripts for CSP compatibility.');
+  }
+
   const buttonMatches = html.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g);
 
   for (const match of buttonMatches) {
@@ -148,6 +152,12 @@ const checkBundleBudget = () => {
 const checkRequiredAssets = () => {
   const requiredFiles = [
     'public/favicon.svg',
+    'extension/manifest.json',
+    'extension/background.js',
+    'extension/icons/icon-16.svg',
+    'extension/icons/icon-32.svg',
+    'extension/icons/icon-48.svg',
+    'extension/icons/icon-128.svg',
     'src/assets/hand-wand.png',
     'README.md',
   ];
@@ -159,9 +169,48 @@ const checkRequiredAssets = () => {
   }
 };
 
+const checkExtensionManifest = () => {
+  const manifestPath = 'extension/manifest.json';
+  const manifest = JSON.parse(read(manifestPath));
+
+  if (manifest.manifest_version !== 3) {
+    fail('extension/manifest.json must use Manifest V3.');
+  }
+
+  if (!manifest.name || !manifest.description || !manifest.version) {
+    fail('extension/manifest.json needs name, description, and version.');
+  }
+
+  if (!manifest.action?.default_title) {
+    fail('extension/manifest.json needs action.default_title for the toolbar icon.');
+  }
+
+  if (manifest.background?.service_worker !== 'background.js') {
+    fail('extension/manifest.json should point background.service_worker to background.js.');
+  }
+
+  if (!existsSync(join(root, 'extension/background.js'))) {
+    fail('extension/background.js is missing.');
+  }
+
+  for (const size of ['16', '32', '48', '128']) {
+    const iconPath = manifest.icons?.[size];
+
+    if (!iconPath) {
+      fail(`extension/manifest.json is missing icons.${size}.`);
+      continue;
+    }
+
+    if (!existsSync(join(root, 'extension', iconPath))) {
+      fail(`extension/manifest.json references a missing icon: ${iconPath}.`);
+    }
+  }
+};
+
 checkStaticHtml();
 checkCssVariables();
 checkRequiredAssets();
+checkExtensionManifest();
 checkBundleBudget();
 
 for (const message of warnings) {

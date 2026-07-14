@@ -28,6 +28,14 @@ Production build:
 npm run build
 ```
 
+Extension build:
+
+```bash
+npm run build:extension
+```
+
+Load `dist-extension/` as an unpacked extension in `chrome://extensions`.
+
 Type check:
 
 ```bash
@@ -43,6 +51,7 @@ npm run check
 ## Project Structure
 
 - `index.html` contains the static app shell, dialogs, controls, and critical anti-flash styles
+- `extension/manifest.json` contains the Manifest V3 extension metadata
 - `src/main.ts` wires app events and coordinates the feature controllers
 - `src/*Controller.ts` modules isolate modal, drag, screen transition, and release animation behavior
 - `src/thoughtStorage.ts`, `src/wallpaper.ts`, and `src/localization.ts` own persistence, image handling, and i18n boundaries
