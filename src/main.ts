@@ -51,6 +51,7 @@ import { loadLanguage, saveLanguage, t } from './localization';
 import { createReleaseAnimationController } from './releaseAnimationController';
 import { createScreenController, type ScreenController } from './screenController';
 import { createAppState } from './state';
+import { appStorage } from './storageAdapter';
 import { createPensieveThought } from './thoughts';
 import { createThoughtModalController } from './thoughtModalController';
 import { createThoughtDragController } from './thoughtDragController';
@@ -77,7 +78,9 @@ const thoughtRenderer = createThoughtRenderer({
 const renderPensieveThoughts = thoughtRenderer.render;
 const updateLetGoButton = thoughtRenderer.updateActions;
 const updateThoughtInteractivity = thoughtRenderer.updateInteractivity;
-const saveCurrentThoughts = () => saveStoredThoughts(state.thoughts);
+const saveCurrentThoughts = () => {
+  void saveStoredThoughts(state.thoughts);
+};
 const thoughtModalController = createThoughtModalController({
   state,
   stage,
@@ -183,17 +186,17 @@ const applyWallpaper = (wallpaper: WallpaperName) => {
     option.classList.toggle('is-active', isActive);
     option.setAttribute('aria-pressed', String(isActive));
   });
-
-  try {
-    window.localStorage.setItem(STORAGE_KEYS.wallpaper, wallpaper);
-  } catch {
-    // The selected wallpaper is optional polish; keep the app usable without storage.
-  }
 };
 
-const loadCustomWallpaperImage = () => {
+const saveWallpaperSelection = (wallpaper: WallpaperName) => {
+  void appStorage.setItem(STORAGE_KEYS.wallpaper, wallpaper).catch(() => {
+    // The selected wallpaper is optional polish; keep the app usable without storage.
+  });
+};
+
+const loadCustomWallpaperImage = async () => {
   try {
-    const savedImage = window.localStorage.getItem(STORAGE_KEYS.customWallpaper);
+    const savedImage = await appStorage.getItem(STORAGE_KEYS.customWallpaper);
 
     if (savedImage) {
       stage?.style.setProperty('--custom-wallpaper-image', `url("${savedImage}")`);
@@ -209,16 +212,16 @@ const loadCustomWallpaperImage = () => {
   return false;
 };
 
-const loadWallpaper = () => {
+const loadWallpaper = async () => {
   let savedWallpaper: string | null = null;
 
   try {
-    savedWallpaper = window.localStorage.getItem(STORAGE_KEYS.wallpaper);
+    savedWallpaper = await appStorage.getItem(STORAGE_KEYS.wallpaper);
   } catch {
     savedWallpaper = null;
   }
 
-  const hasCustomWallpaper = loadCustomWallpaperImage();
+  const hasCustomWallpaper = await loadCustomWallpaperImage();
   const wallpaper = isWallpaperName(savedWallpaper) ? savedWallpaper : 'forest';
 
   applyWallpaper(wallpaper === 'custom' && !hasCustomWallpaper ? 'forest' : wallpaper);
@@ -227,10 +230,11 @@ const loadWallpaper = () => {
 const saveCustomWallpaper = async (file: File) => {
   try {
     const imageUrl = await compressWallpaperImage(file);
-    window.localStorage.setItem(STORAGE_KEYS.customWallpaper, imageUrl);
+    await appStorage.setItem(STORAGE_KEYS.customWallpaper, imageUrl);
     stage?.style.setProperty('--custom-wallpaper-image', `url("${imageUrl}")`);
     document.documentElement.style.setProperty('--initial-custom-wallpaper-image', `url("${imageUrl}")`);
     applyWallpaper('custom');
+    saveWallpaperSelection('custom');
     closeWallpaperMenu();
   } catch {
     wallpaperUploadInput?.focus();
@@ -268,7 +272,7 @@ const addThoughtToPensieve = (text: string) => {
   state.thoughtId += 1;
   state.surfacingThoughtId = id;
   renderPensieveThoughts();
-  saveStoredThoughts(state.thoughts);
+  void saveStoredThoughts(state.thoughts);
 
   window.clearTimeout(state.surfacingTimer);
   state.surfacingTimer = window.setTimeout(() => {
@@ -277,8 +281,8 @@ const addThoughtToPensieve = (text: string) => {
   }, THOUGHT_SURFACE_DURATION_MS);
 };
 
-const loadSavedThoughtsIntoState = () => {
-  const savedState = loadStoredThoughts();
+const loadSavedThoughtsIntoState = async () => {
+  const savedState = await loadStoredThoughts();
   state.thoughts = savedState.thoughts;
   state.thoughtId = savedState.nextThoughtId;
   renderPensieveThoughts();
@@ -354,7 +358,7 @@ const clearPensieveThoughts = () => {
 
   state.clearTimer = window.setTimeout(() => {
     state.thoughts = [];
-    clearStoredThoughts();
+    void clearStoredThoughts();
     renderPensieveThoughts();
     stage?.classList.remove('is-clearing-thoughts');
     stage?.classList.add('just-cleared');
@@ -378,13 +382,16 @@ wallpaperOptions.forEach((option) => {
     const wallpaperName = option.dataset.wallpaperOption ?? null;
 
     if (isWallpaperName(wallpaperName)) {
-      if (wallpaperName === 'custom' && !loadCustomWallpaperImage()) {
-        wallpaperUploadInput?.click();
-        return;
-      }
+      void (async () => {
+        if (wallpaperName === 'custom' && !(await loadCustomWallpaperImage())) {
+          wallpaperUploadInput?.click();
+          return;
+        }
 
-      applyWallpaper(wallpaperName);
-      closeWallpaperMenu();
+        applyWallpaper(wallpaperName);
+        saveWallpaperSelection(wallpaperName);
+        closeWallpaperMenu();
+      })();
     }
   });
 });
@@ -513,28 +520,33 @@ thoughtForm?.addEventListener('submit', (event) => {
   releaseAnimationController.animateRelease();
 });
 
-stage?.classList.remove(
-  'is-capturing',
-  'has-draft-thought',
-  'is-releasing',
-  'just-released',
-  'just-cleared',
-  'is-stirring',
-  'is-clearing-thread',
-  'is-clearing-thoughts',
-  'is-mixing',
-  'has-open-thought',
-  'has-open-wallpaper-menu',
-  'has-open-info',
-  'has-completion',
-);
-captureScreen?.setAttribute('aria-hidden', 'true');
-pensieveScene?.setAttribute('aria-hidden', 'true');
-thoughtModal?.setAttribute('aria-hidden', 'true');
-wallpaperMenu?.setAttribute('aria-hidden', 'true');
-infoDialog?.setAttribute('aria-hidden', 'true');
-completionScreen?.setAttribute('aria-hidden', 'true');
-infoButton?.setAttribute('aria-expanded', 'false');
-loadLanguage();
-loadWallpaper();
-loadSavedThoughtsIntoState();
+const initializeApp = async () => {
+  stage?.classList.remove(
+    'is-capturing',
+    'has-draft-thought',
+    'is-releasing',
+    'just-released',
+    'just-cleared',
+    'is-stirring',
+    'is-clearing-thread',
+    'is-clearing-thoughts',
+    'is-mixing',
+    'has-open-thought',
+    'has-open-wallpaper-menu',
+    'has-open-info',
+    'has-completion',
+  );
+  captureScreen?.setAttribute('aria-hidden', 'true');
+  pensieveScene?.setAttribute('aria-hidden', 'true');
+  thoughtModal?.setAttribute('aria-hidden', 'true');
+  wallpaperMenu?.setAttribute('aria-hidden', 'true');
+  infoDialog?.setAttribute('aria-hidden', 'true');
+  completionScreen?.setAttribute('aria-hidden', 'true');
+  infoButton?.setAttribute('aria-expanded', 'false');
+
+  await loadLanguage();
+  await loadWallpaper();
+  await loadSavedThoughtsIntoState();
+};
+
+void initializeApp();

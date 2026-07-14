@@ -3,7 +3,7 @@
   "name": "Memory Bowl",
   "description": "A calm local-first space for unloading, mixing, editing, and releasing thoughts.",
   "version": "0.1.0",
-  "permissions": ["tabs"],
+  "permissions": ["tabs", "storage"],
   "background": {
     "service_worker": "background.js"
   },

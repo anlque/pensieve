@@ -54,7 +54,8 @@ npm run check
 - `extension/manifest.json` contains the Manifest V3 extension metadata
 - `src/main.ts` wires app events and coordinates the feature controllers
 - `src/*Controller.ts` modules isolate modal, drag, screen transition, and release animation behavior
-- `src/thoughtStorage.ts`, `src/wallpaper.ts`, and `src/localization.ts` own persistence, image handling, and i18n boundaries
+- `src/storageAdapter.ts` switches persistence between web `localStorage` and extension `chrome.storage.local`
+- `src/thoughtStorage.ts`, `src/wallpaper.ts`, and `src/localization.ts` own thought persistence, image handling, and i18n boundaries
 - `src/styles.css` imports the visual system from focused modules in `src/styles/`
 - `src/assets/hand-wand.png` is the wand/hand visual asset used in the capture flow
 - `scripts/check-quality.mjs` runs static quality checks for accessibility basics, SEO shell tags, CSS variables, required assets, and bundle budgets

@@ -185,6 +185,12 @@ const checkExtensionManifest = () => {
     fail('extension/manifest.json needs action.default_title for the toolbar icon.');
   }
 
+  for (const permission of ['tabs', 'storage']) {
+    if (!manifest.permissions?.includes(permission)) {
+      fail(`extension/manifest.json should include the "${permission}" permission.`);
+    }
+  }
+
   if (manifest.background?.service_worker !== 'background.js') {
     fail('extension/manifest.json should point background.service_worker to background.js.');
   }

@@ -2,6 +2,7 @@ import { languageOptions, thoughtCloudText, thoughtInput } from './dom';
 import { STORAGE_KEYS, type LanguageName } from './config';
 import { isLanguageName } from './guards';
 import { translations, type TranslationKey } from './i18n';
+import { appStorage } from './storageAdapter';
 
 let currentLanguage: LanguageName = isLanguageName(document.documentElement.lang) ? document.documentElement.lang : 'ru';
 
@@ -99,18 +100,16 @@ export const applyLanguage = (language: LanguageName) => {
 export const saveLanguage = (language: LanguageName) => {
   applyLanguage(language);
 
-  try {
-    window.localStorage.setItem(STORAGE_KEYS.language, language);
-  } catch {
+  void appStorage.setItem(STORAGE_KEYS.language, language).catch(() => {
     // Language preference is optional; the default copy remains usable.
-  }
+  });
 };
 
-export const loadLanguage = () => {
+export const loadLanguage = async () => {
   let savedLanguage: string | null = null;
 
   try {
-    savedLanguage = window.localStorage.getItem(STORAGE_KEYS.language);
+    savedLanguage = await appStorage.getItem(STORAGE_KEYS.language);
   } catch {
     savedLanguage = null;
   }

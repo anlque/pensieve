@@ -2,6 +2,7 @@ import {
   MAX_STORED_THOUGHTS,
   STORAGE_KEYS,
 } from './config';
+import { appStorage } from './storageAdapter';
 import { createPensieveThought } from './thoughts';
 import type { PensieveThought } from './types';
 
@@ -10,25 +11,25 @@ export type SavedThoughtsState = {
   nextThoughtId: number;
 };
 
-export const saveThoughts = (thoughts: PensieveThought[]) => {
+export const saveThoughts = async (thoughts: PensieveThought[]) => {
   try {
-    window.localStorage.setItem(STORAGE_KEYS.thoughts, JSON.stringify(thoughts.map((thought) => thought.text)));
+    await appStorage.setItem(STORAGE_KEYS.thoughts, JSON.stringify(thoughts.map((thought) => thought.text)));
   } catch {
     // Storage is a convenience; the app should still work without it.
   }
 };
 
-export const clearSavedThoughts = () => {
+export const clearSavedThoughts = async () => {
   try {
-    window.localStorage.removeItem(STORAGE_KEYS.thoughts);
+    await appStorage.removeItem(STORAGE_KEYS.thoughts);
   } catch {
     // Storage is a convenience; the app should still work without it.
   }
 };
 
-export const loadSavedThoughts = (): SavedThoughtsState => {
+export const loadSavedThoughts = async (): Promise<SavedThoughtsState> => {
   try {
-    const saved = window.localStorage.getItem(STORAGE_KEYS.thoughts);
+    const saved = await appStorage.getItem(STORAGE_KEYS.thoughts);
 
     if (!saved) {
       return { thoughts: [], nextThoughtId: 0 };
