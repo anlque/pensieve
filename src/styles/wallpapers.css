@@ -309,6 +309,15 @@
   transform: scale(0.99);
 }
 
+.wallpaper-custom-row {
+  position: relative;
+}
+
+.wallpaper-option-custom {
+  width: 100%;
+  padding-right: 28px;
+}
+
 .wallpaper-swatch {
   display: block;
   width: 34px;
@@ -382,6 +391,57 @@
   height: 1px;
   opacity: 0;
   pointer-events: none;
+}
+
+.wallpaper-reset-custom {
+  display: none;
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 1;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0 0 1px;
+  border: 0;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 42% 34%, rgba(150, 210, 239, 0.18), transparent 54%),
+    rgba(3, 12, 20, 0.72);
+  color: rgba(206, 230, 242, 0.72);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.26),
+    0 0 10px rgba(95, 185, 238, 0.08);
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.has-custom-wallpaper .wallpaper-reset-custom {
+  display: grid;
+}
+
+.wallpaper-reset-custom:hover,
+.wallpaper-reset-custom:focus-visible {
+  background:
+    radial-gradient(circle at 42% 34%, rgba(172, 226, 255, 0.26), transparent 54%),
+    rgba(6, 23, 34, 0.82);
+  color: rgba(247, 252, 255, 0.96);
+  box-shadow:
+    0 5px 16px rgba(0, 0, 0, 0.3),
+    0 0 14px rgba(88, 187, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.wallpaper-reset-custom:focus-visible {
+  outline: 1px solid rgba(181, 239, 255, 0.9);
+  outline-offset: 2px;
 }
 
 .forest-depth {

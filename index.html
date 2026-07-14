@@ -269,10 +269,15 @@
             <span class="wallpaper-swatch wallpaper-swatch-quidditch"></span>
             <span>Playing field</span>
           </button>
-          <button class="wallpaper-option" type="button" data-wallpaper-option="custom">
-            <span class="wallpaper-swatch wallpaper-swatch-custom"></span>
-            <span>Custom image</span>
-          </button>
+          <div class="wallpaper-custom-row">
+            <button class="wallpaper-option wallpaper-option-custom" type="button" data-wallpaper-option="custom">
+              <span class="wallpaper-swatch wallpaper-swatch-custom"></span>
+              <span>Custom image</span>
+            </button>
+            <button class="wallpaper-reset-custom" type="button" aria-label="Reset custom image" title="Reset custom image">
+              <span aria-hidden="true">↺</span>
+            </button>
+          </div>
           <input
             class="wallpaper-upload-input"
             type="file"

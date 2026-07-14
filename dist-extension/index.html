@@ -213,8 +213,8 @@
     </style>
     <script src="./init-preferences.js"></script>
     <title>Memory Bowl</title>
-    <script type="module" crossorigin src="./assets/index-CpSYsQUv.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-Dqf1T7fr.css">
+    <script type="module" crossorigin src="./assets/index-BpPkEqWu.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DgoMgBjr.css">
   </head>
   <body>
     <main id="app" class="app-shell">
@@ -271,10 +271,15 @@
             <span class="wallpaper-swatch wallpaper-swatch-quidditch"></span>
             <span>Playing field</span>
           </button>
-          <button class="wallpaper-option" type="button" data-wallpaper-option="custom">
-            <span class="wallpaper-swatch wallpaper-swatch-custom"></span>
-            <span>Custom image</span>
-          </button>
+          <div class="wallpaper-custom-row">
+            <button class="wallpaper-option wallpaper-option-custom" type="button" data-wallpaper-option="custom">
+              <span class="wallpaper-swatch wallpaper-swatch-custom"></span>
+              <span>Custom image</span>
+            </button>
+            <button class="wallpaper-reset-custom" type="button" aria-label="Reset custom image" title="Reset custom image">
+              <span aria-hidden="true">↺</span>
+            </button>
+          </div>
           <input
             class="wallpaper-upload-input"
             type="file"

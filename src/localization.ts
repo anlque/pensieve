@@ -56,6 +56,8 @@ export const applyLanguage = (language: LanguageName) => {
   setText('[data-wallpaper-option="quidditch"] span:last-child', 'wallpaper.quidditch');
   setText('[data-wallpaper-option="custom"] span:last-child', 'wallpaper.custom');
   setAttribute('.wallpaper-upload-input', 'aria-label', 'wallpaper.upload');
+  setAttribute('.wallpaper-reset-custom', 'aria-label', 'wallpaper.resetCustom');
+  setAttribute('.wallpaper-reset-custom', 'title', 'wallpaper.resetCustom');
   setAttribute('.info-close-button', 'aria-label', 'info.close');
   setText('#info-dialog-title', 'info.title');
   setText('.info-dialog-content p', 'info.summary');

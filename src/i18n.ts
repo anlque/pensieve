@@ -16,6 +16,7 @@ export type TranslationKey =
   | 'wallpaper.quidditch'
   | 'wallpaper.custom'
   | 'wallpaper.upload'
+  | 'wallpaper.resetCustom'
   | 'info.close'
   | 'info.title'
   | 'info.summary'
@@ -63,6 +64,7 @@ export const translations: Record<LanguageName, Record<TranslationKey, string>> 
     'wallpaper.quidditch': 'Игровое поле',
     'wallpaper.custom': 'Своя картинка',
     'wallpaper.upload': 'Загрузить свою картинку для обоев',
+    'wallpaper.resetCustom': 'Сбросить свою картинку',
     'info.close': 'Закрыть информацию',
     'info.title': 'Омут памяти',
     'info.summary': 'Место, куда можно выгрузить мысли, чтобы стало легче.',
@@ -109,6 +111,7 @@ export const translations: Record<LanguageName, Record<TranslationKey, string>> 
     'wallpaper.quidditch': 'Playing field',
     'wallpaper.custom': 'Custom image',
     'wallpaper.upload': 'Upload your own wallpaper image',
+    'wallpaper.resetCustom': 'Reset custom image',
     'info.close': 'Close information',
     'info.title': 'Memory Bowl',
     'info.summary': 'A quiet place to unload thoughts when your mind feels crowded.',

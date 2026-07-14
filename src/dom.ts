@@ -11,6 +11,7 @@ export const tuneButton = document.querySelector<HTMLButtonElement>('.tune-butto
 export const wallpaperMenu = document.querySelector<HTMLElement>('.wallpaper-menu');
 export const wallpaperOptions = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-wallpaper-option]'));
 export const wallpaperUploadInput = document.querySelector<HTMLInputElement>('.wallpaper-upload-input');
+export const wallpaperResetCustomButton = document.querySelector<HTMLButtonElement>('.wallpaper-reset-custom');
 export const languageOptions = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-language-option]'));
 export const thoughtForm = document.querySelector<HTMLFormElement>('.thought-form');
 export const thoughtInput = document.querySelector<HTMLInputElement>('.thought-input');

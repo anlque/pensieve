@@ -33,6 +33,7 @@ import {
   tuneButton,
   wallpaperMenu,
   wallpaperOptions,
+  wallpaperResetCustomButton,
   wallpaperUploadInput,
   wandButton,
   wandHand,
@@ -198,6 +199,10 @@ const saveWallpaperSelection = (wallpaper: WallpaperName) => {
   });
 };
 
+const setCustomWallpaperAvailability = (hasCustomWallpaper: boolean) => {
+  stage?.classList.toggle('has-custom-wallpaper', hasCustomWallpaper);
+};
+
 const loadCustomWallpaperImage = async () => {
   try {
     const savedImage = await appStorage.getItem(STORAGE_KEYS.customWallpaper);
@@ -205,6 +210,7 @@ const loadCustomWallpaperImage = async () => {
     if (savedImage) {
       stage?.style.setProperty('--custom-wallpaper-image', `url("${savedImage}")`);
       document.documentElement.style.setProperty('--initial-custom-wallpaper-image', `url("${savedImage}")`);
+      setCustomWallpaperAvailability(true);
       return true;
     }
   } catch {
@@ -213,6 +219,7 @@ const loadCustomWallpaperImage = async () => {
 
   stage?.style.removeProperty('--custom-wallpaper-image');
   document.documentElement.style.removeProperty('--initial-custom-wallpaper-image');
+  setCustomWallpaperAvailability(false);
   return false;
 };
 
@@ -237,11 +244,29 @@ const saveCustomWallpaper = async (file: File) => {
     await appStorage.setItem(STORAGE_KEYS.customWallpaper, imageUrl);
     stage?.style.setProperty('--custom-wallpaper-image', `url("${imageUrl}")`);
     document.documentElement.style.setProperty('--initial-custom-wallpaper-image', `url("${imageUrl}")`);
+    setCustomWallpaperAvailability(true);
     applyWallpaper('custom');
     saveWallpaperSelection('custom');
     closeWallpaperMenu();
   } catch {
     wallpaperUploadInput?.focus();
+  }
+};
+
+const resetCustomWallpaper = async () => {
+  try {
+    await appStorage.removeItem(STORAGE_KEYS.customWallpaper);
+  } finally {
+    stage?.style.removeProperty('--custom-wallpaper-image');
+    document.documentElement.style.removeProperty('--initial-custom-wallpaper-image');
+    setCustomWallpaperAvailability(false);
+
+    if (stage?.dataset.wallpaper === 'custom') {
+      applyWallpaper('forest');
+      saveWallpaperSelection('forest');
+    }
+
+    closeWallpaperMenu();
   }
 };
 
@@ -413,6 +438,9 @@ wallpaperUploadInput?.addEventListener('change', (event) => {
   }
 
   input.value = '';
+});
+wallpaperResetCustomButton?.addEventListener('click', () => {
+  void resetCustomWallpaper();
 });
 languageOptions.forEach((option) => {
   option.addEventListener('click', () => {
