@@ -1,4 +1,5 @@
 import type { AppState } from './state';
+import { moveFocusOutside } from './utils/focus';
 
 type ReleaseAnimationApi = {
   cancelReleaseFrame: () => void;
@@ -66,6 +67,10 @@ export const createScreenController = ({
     hideCompletionScreen();
     releaseAnimation.cancelReleaseFrame();
     releaseAnimation.resetStyles();
+    moveFocusOutside(captureScreen, undefined);
+    moveFocusOutside(pensieveScene, undefined);
+    moveFocusOutside(thoughtModal, undefined);
+    moveFocusOutside(infoDialog, infoButton);
     stage?.classList.remove(
       'is-capturing',
       'has-draft-thought',
@@ -119,6 +124,7 @@ export const createScreenController = ({
 
   const closeMixingView = () => {
     closeThoughtModal();
+    moveFocusOutside(pensieveScene, thoughtInput);
     stage?.classList.remove('is-mixing');
     pensieveScene?.setAttribute('aria-hidden', 'true');
     updateThoughtInteractivity();

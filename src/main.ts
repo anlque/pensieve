@@ -62,6 +62,7 @@ import {
   saveThoughts as saveStoredThoughts,
 } from './thoughtStorage';
 import { compressWallpaperImage } from './wallpaper';
+import { moveFocusOutside } from './utils/focus';
 
 const state = createAppState();
 let screenController: ScreenController;
@@ -119,12 +120,14 @@ const releaseAnimationController = createReleaseAnimationController({
 });
 
 const closeWallpaperMenu = () => {
+  moveFocusOutside(wallpaperMenu, tuneButton);
   stage?.classList.remove('has-open-wallpaper-menu');
   wallpaperMenu?.setAttribute('aria-hidden', 'true');
   tuneButton?.setAttribute('aria-expanded', 'false');
 };
 
 const closeInfoDialog = () => {
+  moveFocusOutside(infoDialog, infoButton);
   stage?.classList.remove('has-open-info');
   infoDialog?.setAttribute('aria-hidden', 'true');
   infoButton?.setAttribute('aria-expanded', 'false');
@@ -132,6 +135,7 @@ const closeInfoDialog = () => {
 
 const hideCompletionScreen = () => {
   window.clearTimeout(state.completionTimer);
+  moveFocusOutside(completionScreen, wandButton);
   stage?.classList.remove('has-completion');
   completionScreen?.setAttribute('aria-hidden', 'true');
 };

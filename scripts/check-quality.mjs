@@ -173,10 +173,10 @@ const checkRequiredAssets = () => {
     'public/favicon.svg',
     'extension/manifest.json',
     'extension/background.js',
-    'extension/icons/icon-16.svg',
-    'extension/icons/icon-32.svg',
-    'extension/icons/icon-48.svg',
-    'extension/icons/icon-128.svg',
+    'extension/icons/icon-16.png',
+    'extension/icons/icon-32.png',
+    'extension/icons/icon-48.png',
+    'extension/icons/icon-128.png',
     'src/assets/hand-wand.png',
     'README.md',
   ];
@@ -226,6 +226,10 @@ const checkExtensionManifest = () => {
       continue;
     }
 
+    if (!iconPath.endsWith('.png')) {
+      fail(`extension/manifest.json icon ${size} should be a PNG file.`);
+    }
+
     if (!existsSync(join(root, 'extension', iconPath))) {
       fail(`extension/manifest.json references a missing icon: ${iconPath}.`);
     }
@@ -245,10 +249,10 @@ const checkExtensionPackage = () => {
     'dist-extension/manifest.json',
     'dist-extension/background.js',
     'dist-extension/init-preferences.js',
-    'dist-extension/icons/icon-16.svg',
-    'dist-extension/icons/icon-32.svg',
-    'dist-extension/icons/icon-48.svg',
-    'dist-extension/icons/icon-128.svg',
+    'dist-extension/icons/icon-16.png',
+    'dist-extension/icons/icon-32.png',
+    'dist-extension/icons/icon-48.png',
+    'dist-extension/icons/icon-128.png',
   ];
 
   for (const file of requiredPackageFiles) {
@@ -278,6 +282,10 @@ const checkExtensionPackage = () => {
 
     if (!iconPath || !existsSync(join(distExtensionPath, iconPath))) {
       fail(`dist-extension/manifest.json references a missing ${size}px icon.`);
+    }
+
+    if (iconPath && !iconPath.endsWith('.png')) {
+      fail(`dist-extension/manifest.json icon ${size} should be a PNG file.`);
     }
   }
 
