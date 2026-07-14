@@ -48,6 +48,14 @@ Quality check:
 npm run check
 ```
 
+Extension package check:
+
+```bash
+npm run check:extension
+```
+
+Use docs/extension-qa.md for the manual unpacked-extension QA pass.
+
 ## Project Structure
 
 - `index.html` contains the static app shell, dialogs, controls, and critical anti-flash styles

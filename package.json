@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:extension": "vite build --mode extension && node scripts/prepare-extension.mjs",
     "check": "npm run build && node scripts/check-quality.mjs",
+    "check:extension": "npm run build:extension && node scripts/check-quality.mjs --extension-package",
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {},

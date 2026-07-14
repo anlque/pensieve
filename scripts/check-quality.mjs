@@ -4,6 +4,7 @@ import { join } from 'node:path';
 const root = process.cwd();
 const errors = [];
 const warnings = [];
+const shouldCheckExtensionPackage = process.argv.includes('--extension-package');
 
 const read = (path) => readFileSync(join(root, path), 'utf8');
 const kb = (bytes) => `${(bytes / 1024).toFixed(1)} kB`;
@@ -149,6 +150,24 @@ const checkBundleBudget = () => {
   }
 };
 
+const checkNoExtensionUnsafeReferences = (file, source) => {
+  const remoteReference = source.match(/https?:\/\//);
+  const absoluteAssetReference = source.match(/\b(?:href|src)=["']\/(?!\/)/);
+  const devSourceReference = source.match(/["']\/src\//);
+
+  if (remoteReference) {
+    fail(`${file} contains a remote URL. Extension package resources should be local.`);
+  }
+
+  if (absoluteAssetReference) {
+    fail(`${file} contains an absolute href/src path. Extension package assets should use relative paths.`);
+  }
+
+  if (devSourceReference) {
+    fail(`${file} references /src/. Extension package should reference built assets only.`);
+  }
+};
+
 const checkRequiredAssets = () => {
   const requiredFiles = [
     'public/favicon.svg',
@@ -213,11 +232,81 @@ const checkExtensionManifest = () => {
   }
 };
 
+const checkExtensionPackage = () => {
+  const distExtensionPath = join(root, 'dist-extension');
+
+  if (!existsSync(distExtensionPath)) {
+    fail('dist-extension is missing. Run npm run build:extension before extension package checks.');
+    return;
+  }
+
+  const requiredPackageFiles = [
+    'dist-extension/index.html',
+    'dist-extension/manifest.json',
+    'dist-extension/background.js',
+    'dist-extension/init-preferences.js',
+    'dist-extension/icons/icon-16.svg',
+    'dist-extension/icons/icon-32.svg',
+    'dist-extension/icons/icon-48.svg',
+    'dist-extension/icons/icon-128.svg',
+  ];
+
+  for (const file of requiredPackageFiles) {
+    if (!existsSync(join(root, file))) {
+      fail(`Extension package is missing ${file}.`);
+    }
+  }
+
+  const manifest = JSON.parse(read('dist-extension/manifest.json'));
+
+  if (manifest.manifest_version !== 3) {
+    fail('dist-extension/manifest.json must use Manifest V3.');
+  }
+
+  if (manifest.background?.service_worker !== 'background.js') {
+    fail('dist-extension/manifest.json should point background.service_worker to background.js.');
+  }
+
+  for (const permission of ['tabs', 'storage']) {
+    if (!manifest.permissions?.includes(permission)) {
+      fail(`dist-extension/manifest.json should include the "${permission}" permission.`);
+    }
+  }
+
+  for (const size of ['16', '32', '48', '128']) {
+    const iconPath = manifest.icons?.[size];
+
+    if (!iconPath || !existsSync(join(distExtensionPath, iconPath))) {
+      fail(`dist-extension/manifest.json references a missing ${size}px icon.`);
+    }
+  }
+
+  const packageTextFiles = [
+    ...collectFiles('dist-extension', '.html'),
+    ...collectFiles('dist-extension', '.js'),
+    ...collectFiles('dist-extension', '.css'),
+    ...collectFiles('dist-extension', '.json'),
+  ];
+
+  for (const file of packageTextFiles) {
+    const source = read(file);
+    checkNoExtensionUnsafeReferences(file, source);
+
+    if (file.endsWith('.html') && /<script\b(?![^>]*\bsrc=)[^>]*>[\s\S]*?<\/script>/.test(source)) {
+      fail(`${file} contains inline script. Extension pages should use local external scripts.`);
+    }
+  }
+};
+
 checkStaticHtml();
 checkCssVariables();
 checkRequiredAssets();
 checkExtensionManifest();
 checkBundleBudget();
+
+if (shouldCheckExtensionPackage) {
+  checkExtensionPackage();
+}
 
 for (const message of warnings) {
   console.warn(`Warning: ${message}`);
