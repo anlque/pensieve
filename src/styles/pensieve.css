@@ -132,12 +132,12 @@
   top: var(--thought-y);
   display: grid;
   place-items: center;
-  width: clamp(70px, 16%, 104px);
-  min-height: 48px;
-  padding: 10px 12px;
+  width: clamp(88px, 19%, 126px);
+  min-height: 40px;
+  padding: 8px 15px;
   appearance: none;
   border: 1px solid rgba(184, 232, 255, 0.3);
-  border-radius: 48% 52% 44% 56% / 55% 44% 56% 45%;
+  border-radius: 52% 48% 50% 50% / 42% 46% 54% 58%;
   background:
     radial-gradient(circle at 34% 24%, rgba(235, 250, 255, 0.36), transparent 24%),
     radial-gradient(circle at 50% 52%, rgba(103, 177, 226, 0.4), rgba(31, 79, 116, 0.26) 64%, rgba(7, 24, 38, 0.14));
@@ -340,17 +340,17 @@
 }
 
 .pensieve-thought::before {
-  left: -8px;
-  bottom: 10px;
-  width: 18px;
-  height: 18px;
+  left: -9px;
+  bottom: 8px;
+  width: 22px;
+  height: 14px;
 }
 
 .pensieve-thought::after {
-  right: -6px;
-  top: 10px;
-  width: 20px;
-  height: 20px;
+  right: -8px;
+  top: 8px;
+  width: 24px;
+  height: 15px;
 }
 
 .has-many-thoughts .pensieve-thought:nth-child(2n) {
