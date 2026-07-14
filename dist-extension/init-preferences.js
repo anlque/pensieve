@@ -33,7 +33,7 @@
     const savedCustomWallpaper = preferences[keys.customWallpaper];
     const savedLanguage = preferences[keys.language];
     const wallpaper = wallpapers.has(savedWallpaper) ? savedWallpaper : 'forest';
-    document.documentElement.lang = savedLanguage === 'en' ? 'en' : 'ru';
+    document.documentElement.lang = savedLanguage === 'ru' ? 'ru' : 'en';
     document.documentElement.dataset.wallpaper = wallpaper === 'custom' && !savedCustomWallpaper ? 'forest' : wallpaper;
 
     if (typeof savedCustomWallpaper === 'string' && savedCustomWallpaper) {

@@ -4,7 +4,7 @@ import { isLanguageName } from './guards';
 import { translations, type TranslationKey } from './i18n';
 import { appStorage } from './storageAdapter';
 
-let currentLanguage: LanguageName = isLanguageName(document.documentElement.lang) ? document.documentElement.lang : 'ru';
+let currentLanguage: LanguageName = isLanguageName(document.documentElement.lang) ? document.documentElement.lang : 'en';
 
 export const t = (key: TranslationKey) => translations[currentLanguage][key];
 

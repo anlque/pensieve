@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       name="description"
-      content="Омут памяти — спокойное приложение для выгрузки мыслей, их перемешивания, редактирования и отпускания."
+      content="Memory Bowl is a calm app for unloading, mixing, editing, and releasing thoughts."
     />
     <meta name="theme-color" content="#02080d" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
@@ -212,8 +212,8 @@
       }
     </style>
     <script src="./init-preferences.js"></script>
-    <title>Омут памяти</title>
-    <script type="module" crossorigin src="./assets/index-CZkBieWT.js"></script>
+    <title>Memory Bowl</title>
+    <script type="module" crossorigin src="./assets/index-B9ZiM_4A.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-C7GPRbX9.css">
   </head>
   <body>
@@ -242,49 +242,49 @@
         </button>
 
         <div id="wallpaper-menu" class="wallpaper-menu" aria-hidden="true">
-          <p class="wallpaper-menu-title">Обои</p>
+          <p class="wallpaper-menu-title">Wallpaper</p>
           <button class="wallpaper-option" type="button" data-wallpaper-option="forest">
             <span class="wallpaper-swatch wallpaper-swatch-forest"></span>
-            <span>Лес</span>
+            <span>Forest</span>
           </button>
           <button class="wallpaper-option" type="button" data-wallpaper-option="moon">
             <span class="wallpaper-swatch wallpaper-swatch-moon"></span>
-            <span>Луна</span>
+            <span>Moon</span>
           </button>
           <button class="wallpaper-option" type="button" data-wallpaper-option="deep">
             <span class="wallpaper-swatch wallpaper-swatch-deep"></span>
-            <span>Глубина</span>
+            <span>Depth</span>
           </button>
           <button class="wallpaper-option" type="button" data-wallpaper-option="embers">
             <span class="wallpaper-swatch wallpaper-swatch-embers"></span>
-            <span>Искры</span>
+            <span>Embers</span>
           </button>
           <button class="wallpaper-option" type="button" data-wallpaper-option="office">
             <span class="wallpaper-swatch wallpaper-swatch-office"></span>
-            <span>Кабинет</span>
+            <span>Study</span>
           </button>
           <button class="wallpaper-option" type="button" data-wallpaper-option="library">
             <span class="wallpaper-swatch wallpaper-swatch-library"></span>
-            <span>Библиотека</span>
+            <span>Library</span>
           </button>
           <button class="wallpaper-option" type="button" data-wallpaper-option="quidditch">
             <span class="wallpaper-swatch wallpaper-swatch-quidditch"></span>
-            <span>Квиддич</span>
+            <span>Playing field</span>
           </button>
           <button class="wallpaper-option" type="button" data-wallpaper-option="custom">
             <span class="wallpaper-swatch wallpaper-swatch-custom"></span>
-            <span>Своя картинка</span>
+            <span>Custom image</span>
           </button>
           <input
             class="wallpaper-upload-input"
             type="file"
             accept="image/*"
-            aria-label="Загрузить свою картинку для обоев"
+            aria-label="Upload your own wallpaper image"
           />
-          <div class="language-switch" role="group" aria-label="Язык">
-            <span class="language-switch-title">Язык</span>
-            <button class="language-option" type="button" data-language-option="ru" aria-pressed="true">RU</button>
-            <button class="language-option" type="button" data-language-option="en" aria-pressed="false">EN</button>
+          <div class="language-switch" role="group" aria-label="Language">
+            <span class="language-switch-title">Language</span>
+            <button class="language-option" type="button" data-language-option="ru" aria-pressed="false">RU</button>
+            <button class="language-option" type="button" data-language-option="en" aria-pressed="true">EN</button>
           </div>
         </div>
 
@@ -296,17 +296,17 @@
           aria-hidden="true"
           aria-labelledby="info-dialog-title"
         >
-          <button class="info-close-button" type="button" aria-label="Закрыть информацию">
+          <button class="info-close-button" type="button" aria-label="Close information">
             ×
           </button>
           <div class="info-dialog-content">
-            <h2 id="info-dialog-title">Омут памяти</h2>
-            <p>Место, куда можно выгрузить мысли, чтобы стало легче.</p>
+            <h2 id="info-dialog-title">Memory Bowl</h2>
+            <p>A quiet place to unload thoughts when your mind feels crowded.</p>
             <ul>
-              <li>Введи мысль и отпусти её в омут палочкой.</li>
-              <li>Перемешай омут, чтобы рассмотреть мысли ближе.</li>
-              <li>Открой мысль, измени её или удали.</li>
-              <li>Смени обои через настройки справа.</li>
+              <li>Write a thought and release it into the bowl with the wand.</li>
+              <li>Mix the bowl to look at your thoughts up close.</li>
+              <li>Open a thought to edit it or delete it.</li>
+              <li>Change the wallpaper from the settings on the right.</li>
             </ul>
           </div>
         </div>
@@ -316,40 +316,40 @@
 
         <div class="screen screen-home" data-screen="home">
           <header class="hero-copy">
-            <h1 id="app-title">Омут<br />памяти</h1>
-            <p>Твои мысли важны.<br />Выгрузи их. Отпусти.</p>
+            <h1 id="app-title">Memory<br />Bowl</h1>
+            <p>Your thoughts matter.<br />Unload them. Let go.</p>
           </header>
         </div>
 
         <div class="screen screen-capture" data-screen="capture" aria-hidden="true">
-          <button class="back-button" type="button" aria-label="Назад">
+          <button class="back-button" type="button" aria-label="Back">
             ‹
           </button>
 
           <form class="thought-form" autocomplete="off">
-            <label class="sr-only" for="thought-input">Мысль</label>
+            <label class="sr-only" for="thought-input">Thought</label>
             <input
               id="thought-input"
               class="thought-input"
               name="thought"
               type="text"
-              placeholder="Вытащи мысль..."
+              placeholder="Pull out a thought..."
               maxlength="80"
             />
-            <button class="thought-submit" type="submit" aria-label="Поймать мысль">
+            <button class="thought-submit" type="submit" aria-label="Catch thought">
               <span></span>
             </button>
           </form>
 
           <button class="let-go-button" type="button" hidden>
-            Отпустить мысли
+            Release thoughts
           </button>
 
           <button class="mix-button" type="button" hidden>
-            Перемешать
+            Mix
           </button>
 
-          <button class="mix-close-button" type="button" aria-label="Закрыть омут">
+          <button class="mix-close-button" type="button" aria-label="Close bowl">
             ×
           </button>
 
@@ -359,7 +359,7 @@
           </div>
 
           <div class="thought-cloud" aria-live="polite">
-            <span class="thought-cloud-text">Нужно позвонить маме</span>
+            <span class="thought-cloud-text">Need to call mom</span>
           </div>
           <div class="thought-stream" aria-hidden="true">
             <svg class="thought-stream-svg" viewBox="0 0 100 420" preserveAspectRatio="none" focusable="false">
@@ -409,20 +409,20 @@
           role="dialog"
           aria-modal="true"
           aria-hidden="true"
-          aria-label="Мысль"
+          aria-label="Thought"
         >
-          <button class="thought-modal-close" type="button" aria-label="Закрыть мысль">
+          <button class="thought-modal-close" type="button" aria-label="Close thought">
             ×
           </button>
           <div class="thought-modal-view">
             <p class="thought-modal-text"></p>
-            <div class="thought-modal-actions" aria-label="Действия с мыслью">
-              <button class="thought-edit-button" type="button">Изменить</button>
-              <button class="thought-delete-button" type="button">Удалить</button>
+            <div class="thought-modal-actions" aria-label="Thought actions">
+              <button class="thought-edit-button" type="button">Edit</button>
+              <button class="thought-delete-button" type="button">Delete</button>
             </div>
           </div>
           <form class="thought-edit-form" autocomplete="off">
-            <label class="sr-only" for="thought-edit-input">Редактировать мысль</label>
+            <label class="sr-only" for="thought-edit-input">Edit thought</label>
             <input
               id="thought-edit-input"
               class="thought-edit-input"
@@ -431,23 +431,23 @@
               maxlength="80"
             />
             <div class="thought-modal-actions">
-              <button class="thought-save-button" type="submit">Сохранить</button>
-              <button class="thought-cancel-button" type="button">Отмена</button>
+              <button class="thought-save-button" type="submit">Save</button>
+              <button class="thought-cancel-button" type="button">Cancel</button>
             </div>
           </form>
         </div>
 
         <div class="completion-screen" aria-hidden="true" aria-live="polite">
           <div class="completion-moon" aria-hidden="true"></div>
-          <p class="completion-title">Стало легче</p>
-          <p class="completion-text">Ты выгрузила мысли. Можно выдохнуть.</p>
+          <p class="completion-title">A little lighter</p>
+          <p class="completion-text">Your thoughts are released. Take a slow breath.</p>
         </div>
 
         <div class="primary-action">
-          <button class="wand-button" type="button" aria-label="Взять мысль палочкой">
+          <button class="wand-button" type="button" aria-label="Take a thought with the wand">
             <span class="wand-icon"></span>
           </button>
-          <p>Коснись и начни<br />выгружать мысли</p>
+          <p>Touch to start<br />unloading thoughts</p>
         </div>
 
       </section>
